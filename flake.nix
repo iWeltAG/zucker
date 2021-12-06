@@ -7,16 +7,41 @@
   outputs = { self, nixpkgs, flake-utils }: (flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs { inherit system; };
-
-      devEnv = pkgs.python39.withPackages(ps: with ps; [
-        mypy requests aiohttp colored pytest pytest-cov hypothesis sphinx sphinx_rtd_theme black isort
-      ]);
     in
     rec {
-      packages = { inherit devEnv; };
-      defaultPackage = devEnv;
+      packages = {
+        zucker = pkgs.python39Packages.callPackage ./nix/zucker.nix {};
+        devEnv = pkgs.python39.withPackages(ps: with ps; [
+          mypy requests aiohttp colored pytest pytest-cov hypothesis sphinx sphinx_rtd_theme black isort
+        ]);
+      };
+      defaultPackage = packages.zucker;
 
-      devShell = devEnv.env;
+      checks = {
+        inherit (packages) zucker;
+
+        # This derivation runs the black and isort checks.
+        style = pkgs.stdenv.mkDerivation {
+          inherit (packages.zucker) version src;
+          pname = "zucker-style-tests";
+          dontBuild = true;
+
+          installPhase = ''
+            echo "This derivation just runs tests." > $out
+          '';
+
+          doCheck = true;
+          checkInputs = with pkgs.python39Packages; [
+            black isort
+          ];
+          checkPhase = ''
+            black --check tests/ zucker/
+            isort --check tests/ zucker/
+          '';
+        };
+      };
+
+      devShell = packages.devEnv.env;
     }
   ));
 }
