@@ -16,7 +16,7 @@ with a simple, readable API. Features:
 - Fully type-checked (internal and external code)
 
 To get started, have a look at the
-[Documentation](http://crm-integration.git-pages.intern.iwelt.de/zucker/). If
+[Documentation](https://iweltag.github.io/zucker/). If
 you find that something is missing, feel free to open an issue.
 
 ## What does it look like?
@@ -42,7 +42,7 @@ print(",".join(contact.phone_work for contact in contacts[:3]))
 ```
 
 Again, see the
-[Documentation](http://crm-integration.git-pages.intern.iwelt.de/zucker/) for
+[Documentation](https://iweltag.github.io/zucker/) for
 more examples.
 
 ## License
