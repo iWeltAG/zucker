@@ -1,0 +1,22 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.4.0
+    - uses: cachix/install-nix-action@v15
+    - run: nix build .#docs
+    - name: Deploy to GitHub Pages
+      if: success()
+      uses: crazy-max/ghaction-github-pages@v2
+      with:
+        target_branch: gh-pages
+        build_dir: result
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

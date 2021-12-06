@@ -11,9 +11,28 @@
     rec {
       packages = {
         zucker = pkgs.python39Packages.callPackage ./nix/zucker.nix {};
+
         devEnv = pkgs.python39.withPackages(ps: with ps; [
           mypy requests aiohttp colored pytest pytest-cov hypothesis sphinx sphinx_rtd_theme black isort
         ]);
+
+        docs = pkgs.stdenv.mkDerivation {
+          inherit (packages.zucker) version src;
+          pname = "zucker-docs";
+
+          buildInputs = [
+            (pkgs.python39.withPackages (ps: with ps; [
+              sphinx sphinx_rtd_theme
+            ]))
+          ];
+          buildPhase = ''
+            sphinx-build -b html docs public
+          '';
+
+          installPhase = ''
+            cp -r public $out
+          '';
+        };
       };
       defaultPackage = packages.zucker;
 
