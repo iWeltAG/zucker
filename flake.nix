@@ -13,7 +13,12 @@
         zucker = pkgs.python39Packages.callPackage ./nix/zucker.nix {};
 
         devEnv = pkgs.python39.withPackages(ps: with ps; [
-          mypy requests aiohttp colored pytest pytest-cov hypothesis sphinx sphinx_rtd_theme black isort
+          # Optional runtime dependencies
+          requests aiohttp colored
+          # Release tools
+          build twine
+          # Testing, linting and type checking
+          mypy pytest pytest-cov hypothesis sphinx sphinx_rtd_theme black isort
         ]);
 
         docs = pkgs.stdenv.mkDerivation {
