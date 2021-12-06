@@ -6,17 +6,25 @@ on:
       - main
 
 jobs:
-  checks:
+  docs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.4.0
     - uses: cachix/install-nix-action@v15
-    - run: nix build .#docs
-    - name: Deploy to GitHub Pages
-      if: success()
+    - id: build-docs
+      run: |
+        nix build .#docs
+        echo "::set-output name=HTML_PATH::$(readlink -f result)"
+    - if: success()
       uses: crazy-max/ghaction-github-pages@v2
       with:
         target_branch: gh-pages
-        build_dir: result
+        # Use the output from the last step as the path we want do deploy form.
+        # This variable contains the absolute path (in /nix/store) of the
+        # derivation that was built. We need that because the action doesn't
+        # like using the 'result' symlink.
+        # This is a relative path, so we need the ../../etc. to get from
+        # /home/runner/work/zucker/zucker back to /.
+        build_dir: ../../../../..${{ steps.build-docs.outputs.HTML_PATH }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
