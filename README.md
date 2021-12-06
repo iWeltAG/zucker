@@ -46,4 +46,4 @@ more examples.
 
 ## License
 
-[MIT](#)
+[MIT](https://github.com/iWeltAG/zucker/blob/main/LICENSE)
