@@ -1,5 +1,6 @@
 # <div style="text-align: center">Zucker</div>
 
+[![Tests and style linting](https://github.com/iWeltAG/zucker/actions/workflows/commit_checks.yml/badge.svg)](https://github.com/iWeltAG/zucker/actions/workflows/commit_checks.yml)
 ![](https://img.shields.io/badge/python-3.7+-blue)
 
 Zucker is a Python library for
