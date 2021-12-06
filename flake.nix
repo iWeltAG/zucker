@@ -27,6 +27,7 @@
           ];
           buildPhase = ''
             sphinx-build -b html docs public
+            touch public/.nojekyll
           '';
 
           installPhase = ''
