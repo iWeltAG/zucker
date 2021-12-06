@@ -1,0 +1,13 @@
+[report]
+omit =
+    setup.py
+    docs/*
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    return NotImplemented
+    ^\s*\.\.\.$
+    if 0:
+    if __name__ == .__main__.:
