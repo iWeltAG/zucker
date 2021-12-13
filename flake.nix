@@ -17,8 +17,12 @@
           requests aiohttp colored
           # Release tools
           build twine
-          # Testing, linting and type checking
-          mypy pytest pytest-cov hypothesis sphinx sphinx_rtd_theme black isort
+          # Testing, linting, formatting and type checking
+          pytest pytest-cov hypothesis
+          mypy types-requests
+          black isort
+          # Documentation
+          sphinx sphinx_rtd_theme
         ]);
 
         docs = pkgs.stdenv.mkDerivation {
