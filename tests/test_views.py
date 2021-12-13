@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import pytest
 
+from zucker import model
 from zucker.client import SyncClient
 from zucker.filtering import Combinator, FilterSet
 
@@ -37,7 +38,7 @@ def fake_client(monkeypatch) -> FakeClient:
 
 
 def test_init(fake_client: FakeClient):
-    class Demo(fake_client.Module):
+    class Demo(model.SyncModule, client=fake_client):
         pass
 
     for not_applicable in (28, False):
@@ -47,7 +48,7 @@ def test_init(fake_client: FakeClient):
 
 
 def test_query_params_filters(fake_client: FakeClient):
-    class Demo(fake_client.Module):
+    class Demo(model.SyncModule, client=fake_client):
         pass
 
     assert Demo.find(
@@ -93,7 +94,7 @@ def test_query_params_filters(fake_client: FakeClient):
 
 
 def test_len(fake_client: FakeClient):
-    class Demo(fake_client.Module):
+    class Demo(model.SyncModule, client=fake_client):
         pass
 
     fake_client.set_data("get", "Demo/count", {"record_count": 43})
@@ -101,7 +102,7 @@ def test_len(fake_client: FakeClient):
 
 
 def test_getting_id(fake_client: FakeClient):
-    class Demo(fake_client.Module):
+    class Demo(model.SyncModule, client=fake_client):
         pass
 
     view = Demo.find()
@@ -127,7 +128,7 @@ def test_getting_id(fake_client: FakeClient):
 
 
 def test_getting_index(fake_client: FakeClient):
-    class Demo(fake_client.Module):
+    class Demo(model.SyncModule, client=fake_client):
         pass
 
     def handle(method, url, params):
@@ -151,7 +152,7 @@ def test_getting_index(fake_client: FakeClient):
 
 
 def test_iterating_and_slices(fake_client: FakeClient):
-    class Demo(fake_client.Module):
+    class Demo(model.SyncModule, client=fake_client):
         pass
 
     record_data = [

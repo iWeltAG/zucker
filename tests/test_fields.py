@@ -4,7 +4,13 @@ from hypothesis import strategies as st
 
 from zucker import RequestsClient
 from zucker.client import SyncClient
-from zucker.model import BooleanField, RelatedField, StringField, UnboundModule
+from zucker.model import (
+    BooleanField,
+    RelatedField,
+    StringField,
+    SyncModule,
+    UnboundModule,
+)
 from zucker.model.fields.base import MutableField
 from zucker.model.module import BaseModule
 from zucker.model.view import SyncView
@@ -63,7 +69,7 @@ def test_boolean_field_values(raw_value):
 
 
 def test_related_field_initialization(client: SyncClient):
-    class Demo(client.Module, BaseDemo):
+    class Demo(SyncModule, BaseDemo, client=client):
         pass
 
     with pytest.raises(TypeError):
@@ -78,7 +84,7 @@ def test_related_field_initialization(client: SyncClient):
 
 
 def test_related_view_building(client: SyncClient):
-    class Demo(client.Module, BaseDemo):
+    class Demo(SyncModule, BaseDemo, client=client):
         pass
 
     field = RelatedField(Demo, "some_link")

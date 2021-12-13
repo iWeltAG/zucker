@@ -79,12 +79,6 @@ class BaseClient(abc.ABC):
 
         self._metadata: MutableJsonMapping = {}
 
-        self.Module = self._build_module_class()
-
-    @abc.abstractmethod
-    def _build_module_class(self) -> Type[BoundModule]:
-        ...
-
     def __contains__(self, item: Union[str, Type[BoundModule]]) -> bool:
         """Check if the server supports a given module name."""
         from zucker.model.module import BoundModule
@@ -287,20 +281,6 @@ class BaseClient(abc.ABC):
 
 
 class SyncClient(BaseClient, abc.ABC):
-    Module: Type[SyncModule]
-
-    def _build_module_class(self) -> Type[SyncModule]:
-        from zucker.model.module import SyncModule
-
-        client = self
-
-        class BoundSyncModule(SyncModule):
-            @classmethod
-            def get_client(self) -> SyncClient:
-                return client
-
-        return BoundSyncModule
-
     def close(self) -> None:
         pass
 
@@ -328,20 +308,6 @@ class SyncClient(BaseClient, abc.ABC):
 
 
 class AsyncClient(BaseClient):
-    Module: Type[AsyncModule]
-
-    def _build_module_class(self) -> Type[AsyncModule]:
-        from zucker.model.module import AsyncModule
-
-        client = self
-
-        class BoundAsyncModule(AsyncModule):
-            @classmethod
-            def get_client(self) -> AsyncClient:
-                return client
-
-        return BoundAsyncModule
-
     async def close(self) -> None:
         pass
 

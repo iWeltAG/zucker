@@ -22,7 +22,7 @@ class BaseDeno(model.UnboundModule):
 
 
 def test_bound_init(client: SyncClient):
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     # Make sure that records can't be created with the wrong API type.
@@ -37,7 +37,7 @@ def test_bound_init(client: SyncClient):
 
 
 def test_strings(client: SyncClient):
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     for func in list[Callable[[object], str]]((repr, str)):
@@ -80,7 +80,7 @@ def test_new_record_saving(client: SyncClient):
     """New records (without IDs) are saved as expected."""
     client.request = MagicMock(return_value={"id": "abc", "foo": "hi", "bar": "hu"})
 
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     record = Demo(foo="hi", bar="hu")
@@ -98,7 +98,7 @@ def test_existing_record_saving(client: SyncClient):
     """Existing records (that have an ID) are saved as expected."""
     client.request = MagicMock(return_value={"id": "abc", "foo": "f00", "bar": "hu"})
 
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     record = Demo(_module="Demo", id="abc", foo="hi", bar="hu")
@@ -116,7 +116,7 @@ def test_existing_record_saving(client: SyncClient):
 
 
 def test_deleting_unsaved(client: SyncClient):
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     record = Demo(foo="hi", bar="hu")
@@ -133,7 +133,7 @@ def test_deleting(client: SyncClient):
     #   original set)
     client.request = MagicMock(return_value={})
 
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     record = Demo(_module="Demo", id="abc", foo="hi", bar="hu")
@@ -151,7 +151,7 @@ def test_deleting(client: SyncClient):
 def test_refreshing(client: SyncClient):
     client.request = MagicMock(return_value={"id": "abc", "foo": "f00", "bar": "b00"})
 
-    class Demo(client.Module, BaseDemo):
+    class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
     record = Demo(_module="Demo", id="abc", foo="hi", bar="hu")

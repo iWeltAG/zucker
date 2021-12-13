@@ -179,6 +179,8 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
     saved, refreshed and deleted.
     """
 
+    _CLIENT_TYPE: ClassVar[Type[ClientType]]
+    _client: ClassVar[ClientType]
     _api_name: ClassVar[str]
 
     # Cache object that allows direct access to records by their ID. References here are
@@ -186,18 +188,30 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
     # entries in this cache may no longer be accessible.
     _record_cache: ClassVar[MutableMapping[str, BoundModule[ClientType]]]
 
-    def __init_subclass__(cls, api_name: Optional[str] = None, **kwargs):
-        cls._api_name = api_name or cls.__name__
-        cls._record_cache = WeakValueDictionary()
+    def __init_subclass__(
+        cls,
+        client: Optional[ClientType] = None,
+        api_name: Optional[str] = None,
+        **kwargs,
+    ):
+        if not abc.ABC in cls.__bases__:
+            if not isinstance(client, cls._CLIENT_TYPE):
+                raise TypeError(
+                    f"expecting client of type {cls._CLIENT_TYPE!r}, got "
+                    f"{type(client)!r}"
+                )
+            cls._client = client
+            cls._api_name = api_name or cls.__name__
+            cls._record_cache = WeakValueDictionary()
 
     @classmethod
-    @abc.abstractmethod
     def get_client(cls) -> ClientType:
         """Client instance bounded to this module.
 
         This client will be used for all server-side communication. Further, any caches
         are scoped to this client.
         """
+        return cls._client
 
     @property
     def client(self) -> ClientType:
@@ -367,6 +381,8 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
 
 
 class SyncModule(BoundModule[SyncClient], abc.ABC):
+    _CLIENT_TYPE = SyncClient
+
     @classmethod
     def find(
         cls: Type[SyncSelf], *filters: Union[JsonMapping, GenericFilter]
@@ -395,6 +411,8 @@ class SyncModule(BoundModule[SyncClient], abc.ABC):
 
 
 class AsyncModule(BoundModule[AsyncClient], abc.ABC):
+    _CLIENT_TYPE = AsyncClient
+
     @classmethod
     def find(
         cls: Type[AsyncSelf], *filters: Union[JsonMapping, GenericFilter]

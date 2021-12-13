@@ -30,7 +30,7 @@ from zucker import model, RequestsClient
 
 crm = RequestsClient("https://crm.example.com", "zucker", "password")
 
-class Contact(crm.Module, api_name="Contacts"):
+class Contact(model.SyncModule, client=crm, api_name="Contacts"):
     lead_source = model.StringField()
     phone_work = model.StringField()
 

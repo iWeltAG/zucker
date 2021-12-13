@@ -164,7 +164,7 @@ def test_metadata(authenticated_client: SyncClient, fake_server):
 
     assert client.server_info == (server_flavor, server_version, server_build)
 
-    class A(client.Module):
+    class A(model.SyncModule, client=client):
         pass
 
     assert "A" in client

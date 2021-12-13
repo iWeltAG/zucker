@@ -69,7 +69,7 @@ def test_crud(
     skipped all together.
     """
 
-    class Lead(live_client.Module, BaseLead, api_name="Leads"):
+    class Lead(model.SyncModule, BaseLead, client=live_client, api_name="Leads"):
         pass
 
     lead_1 = Lead(first_name=first_name, last_name=last_name)

@@ -24,7 +24,7 @@ is used like this:
 
   # The data model defined here should match the one on the server - although
   # unneeded fields can be omitted.
-  class Contact(crm.Module, api_name="Contacts"):
+  class Contact(model.SyncModule, client=crm, api_name="Contacts"):
       lead_source = model.StringField()
       phone_work = model.StringField()
 
@@ -53,7 +53,7 @@ for asynchronous I/O. Here is the same code from above, but instead of using
   # as the backend.
   crm = AioClient("https://crm.example.com", "zucker", "password")
 
-  class Contact(crm.Module, api_name="Contacts"):
+  class Contact(model.AsyncModule, client=crm, api_name="Contacts"):
       lead_source = model.StringField()
       phone_work = model.StringField()
 

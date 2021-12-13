@@ -28,11 +28,12 @@ Defining modules
 ----------------
 
 To define a module, you need to create a subclass of Zucker's
-:class:`~zucker.model.module.BaseModule` base class. This is done by using the
-``Module`` attribute from the client as a superclass (which automatically points
-to the correct module implementation). This type of module is also referred to
-as a *bound* module because it is fixed to the client it is initialized with.
-Inside your class, define fields with the same name as they appear in the API:
+:class:`~zucker.model.module.BaseModule` base class. This is done by using
+either :class:`~zucker.model.SyncModule` or :class:`~zucker.model.AsyncModule`
+as the superclass, depending on the client implementation. This type of module
+is also referred to as a *bound* module because it is fixed to the client it is
+initialized with. Inside your class, define fields with the same name as they
+appear in the API:
 
 .. code-block:: python
 
@@ -41,16 +42,16 @@ Inside your class, define fields with the same name as they appear in the API:
   crm = SomeClient(...)
 
   # Here, the 'Contact' module is bound to the 'crm' client:
-  class Contact(crm.Module, api_name="Contacts"):
+  class Contact(model.SyncModule, client=crm, api_name="Contacts"):
       first_name = model.StringField()
       lead_source = model.StringField()
       phone_mobile = model.StringField()
       phone_work = model.StringField()
       email_opt_out = model.BooleanField()
 
-If you in an asynchronous environment, the ``Module`` attribute of the client
-will be an async module implementation. Note that it is not possible (and not
-supported) to mix synchronous models with asynchronous clients or vice-versa.
+If you in an asynchronous environment, use ``model.AsyncModule`` instead. Note
+that it is not possible (and not supported) to mix synchronous models with
+asynchronous clients or vice-versa.
 
 Extending the model
 ~~~~~~~~~~~~~~~~~~~
@@ -117,10 +118,10 @@ client yet.
   alpha_crm = RequestsClient("https://alpha.example.com", "zucker", "password")
   beta_crm = AioClient("https://alpha.example.com", "zucker", "wordpass")
 
-  class AlphaContact(alpha_crm.Module, BaseContact, api_name="Contacts"):
+  class AlphaContact(model.SyncModule, BaseContact, client=alpha_crm, api_name="Contacts"):
     pass
 
-  class BetaContact(beta_crm.Module, BaseContact, api_name="Contacts"):
+  class BetaContact(model.AsyncModule, BaseContact, client=beta_crm, api_name="Contacts"):
       # This field will only be present on BetaContact instances:
       email_opt_out = model.BooleanField()
 
@@ -132,8 +133,8 @@ API Reference
 -------------
 
 All bound modules define the following API. You don't need to implement the
-abstract methods, as their implementation is already provided when you use a
-client's ``.Module`` attribute as a superclass.
+abstract methods, as their implementation is already provided when you use the
+synchronous or asynchronous modules as a superclass.
 
 .. autoclass:: zucker.model.module.BoundModule
   :members:
