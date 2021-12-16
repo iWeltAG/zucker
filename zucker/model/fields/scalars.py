@@ -9,7 +9,6 @@ from zucker.codegen.inspection import field_for_metadata
 from zucker.utils import JsonType
 
 from .base import MutableScalarField, ScalarField
-from .registry import field_for_type
 
 __all__ = ["FullnameFields", "DatetimeField", "StringField", "BooleanField", "IdField"]
 
@@ -18,12 +17,10 @@ class FullnameFields(ScalarField):
     ...
 
 
-@field_for_type.register
 class DatetimeField(MutableScalarField[datetime, str]):
     ...
 
 
-@field_for_type.register
 @field_for_metadata.register(metadata_attributes=dict(type="varchar"), require_db=True)
 @field_for_metadata.register(metadata_attributes=dict(type="text"), require_db=True)
 class StringField(MutableScalarField[str, str]):
@@ -52,7 +49,6 @@ class StringField(MutableScalarField[str, str]):
         return filtering.StringContainsFilter(self.name, infix)
 
 
-@field_for_type.register
 @field_for_metadata.register(metadata_attributes=dict(type="bool"), require_db=True)
 class BooleanField(MutableScalarField[bool, bool]):
     @staticmethod
@@ -77,7 +73,6 @@ class BooleanField(MutableScalarField[bool, bool]):
         return self.values(False)
 
 
-@field_for_type.register
 class IdField(ScalarField[UUID, str]):
     @classmethod
     def load_value(cls, raw_value: JsonType) -> UUID:
