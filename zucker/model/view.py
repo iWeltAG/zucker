@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Any,
     Awaitable,
     Dict,
     Generic,
@@ -25,14 +26,15 @@ from ..filtering import Combinator, FilterSet, GenericFilter
 from ..utils import JsonMapping, check_json_mapping
 
 if TYPE_CHECKING:
+    from ..client import BaseClient  # noqa: F401
     from .module import AsyncModule, BoundModule, SyncModule  # noqa: F401
 
-ModuleType = TypeVar("ModuleType", bound="BoundModule")
+ModuleType = TypeVar("ModuleType", bound="BoundModule[BaseClient]")
 SyncModuleType = TypeVar("SyncModuleType", bound="SyncModule")
 AsyncModuleType = TypeVar("AsyncModuleType", bound="AsyncModule")
 GetReturn = TypeVar("GetReturn", covariant=True)
 OptionalGetReturn = TypeVar("OptionalGetReturn", covariant=True)
-Self = TypeVar("Self", bound="View")
+Self = TypeVar("Self", bound="View[Any, Any, Any]")
 
 
 class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
@@ -69,6 +71,10 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             1,
         )
 
+        # This parameter holds the total size of the view - not just that part that is
+        # targeted by the range. This is fetched by calling .prefetch_size()
+        self._size: Optional[int] = None
+
         # The record cache for this view is different from the one in the module itself
         # in that this one
         # a) holds strong references so that it is ensured that the cache is actually
@@ -84,7 +90,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
     # Magic methods #
     #################
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         module_name = self._module.__name__
         prefix = "filtered view" if self._filter else "view"
 
@@ -113,7 +119,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
 
         return f"<{prefix} on {module_name}{range_repr}>"
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, View):
             return False
         if other._module is not self._module:
@@ -122,6 +128,10 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             getattr(self, attr) == getattr(other, attr)
             for attr in ("_base_endpoint", "_filter")
         )
+
+    def __len__(self) -> int:
+        self._validate_range()
+        return len(self._range)
 
     @overload
     def __getitem__(self, item: Union[UUID, str]) -> GetReturn:
@@ -205,13 +215,18 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
     # Extending and chaining #
     ##########################
 
-    def _validate_range(self):
+    def _validate_range(self) -> None:
         """Make sure that the range currently set on this view has valid bounds."""
+        if self._size is None:
+            raise RuntimeError(
+                "view size is unknown - make sure .prefetch_size() has been called"
+            )
+
         reverse = (self._range.step or 1) < 0
         if reverse and self._range.start == sys.maxsize - 1:
-            self._range = range(len(self) - 1, self._range.stop, self._range.step)
+            self._range = range(self._size - 1, self._range.stop, self._range.step)
         elif not reverse and self._range.stop == sys.maxsize:
-            self._range = range(self._range.start, len(self), self._range.step)
+            self._range = range(self._range.start, self._size, self._range.step)
 
     def filtered(self: Self, *filters: Union[JsonMapping, GenericFilter]) -> Self:
         """Return a clone of this view which contains additional filters.
@@ -433,7 +448,7 @@ class SyncView(
     Generic[SyncModuleType],
     View[SyncModuleType, SyncModuleType, Optional[SyncModuleType]],
 ):
-    def __len__(self) -> int:
+    def _prefetch_size(self) -> None:
         """Fetch the total number of results that can be queried from this view."""
         data = self._module.get_client().request(
             "get",
@@ -446,7 +461,12 @@ class SyncView(
             raise InvalidSugarResponseError(
                 f"invalid record count received: {record_count!r}"
             )
-        return record_count
+        self._size = record_count
+
+    def _validate_range(self) -> None:
+        if self._size is None:
+            self._prefetch_size()
+        super()._validate_range()
 
     def __iter__(self) -> Iterator[SyncModuleType]:
         self._validate_range()
