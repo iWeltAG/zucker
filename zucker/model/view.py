@@ -11,6 +11,7 @@ from typing import (
     Awaitable,
     Dict,
     Generic,
+    Iterable,
     Iterator,
     Optional,
     Tuple,
@@ -23,7 +24,7 @@ from uuid import UUID
 
 from ..exceptions import InvalidSugarResponseError
 from ..filtering import Combinator, FilterSet, GenericFilter
-from ..utils import JsonMapping, check_json_mapping
+from ..utils import JsonMapping, JsonType, check_json_mapping
 
 if TYPE_CHECKING:
     from ..client import BaseClient  # noqa: F401
@@ -420,17 +421,18 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
 
         params = {}
 
-        def parse_filter(prefix, filter_definition):
+        def parse_filter(prefix: str, filter_definition: JsonType) -> None:
             """Recursively parse a filter definition and add the appropriate parameters
             to the result object."""
             if isinstance(filter_definition, (str, int, float, bool)):
                 params["filter{}".format(prefix)] = filter_definition
                 return
 
-            if isinstance(filter_definition, Sequence):
-                iterator = enumerate(filter_definition)
-            elif isinstance(filter_definition, Mapping):
+            iterator: Iterable[tuple[str, JsonType]]
+            if isinstance(filter_definition, Mapping):
                 iterator = filter_definition.items()
+            elif isinstance(filter_definition, Sequence):
+                iterator = enumerate(filter_definition)  # type: ignore
             else:
                 raise TypeError(
                     f"invalid filter definition type: {type(filter_definition)}"

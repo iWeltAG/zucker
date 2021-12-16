@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Generic, Optional, Type, TypeVar, Union, overload
+from typing import Awaitable  # noqa: F401
+from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, overload
 
 from zucker.filtering import NegatableFilter, NullishFilter, ValuesFilter
 from zucker.utils import ApiType, JsonType
@@ -14,7 +15,7 @@ NativeType = TypeVar("NativeType")
 SyncGetType = TypeVar("SyncGetType")
 AsyncGetType = TypeVar("AsyncGetType")
 SetType = TypeVar("SetType")
-Self = TypeVar("Self", bound="Field")
+Self = TypeVar("Self", bound="Field[Any, Awaitable[Any]]")
 
 
 class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
@@ -34,21 +35,27 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
         self.name  # noqa
         self._name = None
 
-    def __set_name__(self, owner: BaseModule, name: str):
+    def __set_name__(self, owner: BaseModule, name: str) -> None:
         self._name = name
         # Check the name to make sure it's valid.
         self.name  # noqa
 
     @overload
-    def __get__(self, instance: SyncModule, owner: Type[BaseModule]) -> SyncGetType:
+    def __get__(
+        self: Self, instance: SyncModule, owner: Type[BaseModule]
+    ) -> SyncGetType:
         ...
 
     @overload
-    def __get__(self, instance: AsyncModule, owner: Type[BaseModule]) -> AsyncGetType:
+    def __get__(
+        self: Self, instance: AsyncModule, owner: Type[BaseModule]
+    ) -> AsyncGetType:
         ...
 
     @overload
-    def __get__(self, instance: UnboundModule, owner: Type[BaseModule]) -> SyncGetType:
+    def __get__(
+        self: Self, instance: UnboundModule, owner: Type[BaseModule]
+    ) -> SyncGetType:
         ...
 
     @overload
@@ -88,7 +95,7 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
             )
 
     @property
-    def name(self):
+    def name(self) -> str:
         if self._api_name is not None:
             result = self._api_name
         elif self._name is None:
@@ -138,7 +145,7 @@ class MutableField(
     return native date objects but additionally accept strings for setting.
     """
 
-    def __set__(self, instance: BaseModule, value: SetType):
+    def __set__(self, instance: BaseModule, value: SetType) -> None:
         from ..module import BaseModule
 
         if not isinstance(instance, BaseModule):
@@ -146,7 +153,7 @@ class MutableField(
         self._set_value(instance, value)
 
     @abc.abstractmethod
-    def _set_value(self, record: BaseModule, value: SetType):
+    def _set_value(self, record: BaseModule, value: SetType) -> None:
         ...
 
 
@@ -195,7 +202,7 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
 
     def __eq__(  # type: ignore[override]
         self, other: Optional[Union[NativeType, ApiType]]
-    ) -> NegatableFilter:
+    ) -> NegatableFilter[Any]:
         """Filter for exact values of this field.
 
         Depending on type of the given value, this is is equivalent to one of the other
@@ -212,7 +219,7 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
 
     def __ne__(  # type: ignore[override]
         self, other: Optional[Union[NativeType, ApiType]]
-    ) -> NegatableFilter:
+    ) -> NegatableFilter[Any]:
         """Inverse of the ``==`` filter operator.
 
         Use the ``!=`` operator to exclude specific values:
@@ -282,6 +289,6 @@ class MutableScalarField(
     MutableField[NativeType, NativeType, Union[NativeType, ApiType]],
     abc.ABC,
 ):
-    def _set_value(self, record: BaseModule, value: Union[ApiType, NativeType]):
+    def _set_value(self, record: BaseModule, value: Union[ApiType, NativeType]) -> None:
         raw_value = self.serialize(value)
         record._updated_data[self.name] = raw_value

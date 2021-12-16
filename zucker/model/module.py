@@ -4,6 +4,7 @@ import abc
 from collections.abc import MutableMapping
 from typing import (
     TYPE_CHECKING,
+    Any,
     Awaitable,
     ClassVar,
     Generic,
@@ -29,9 +30,9 @@ from .view import AsyncView, SyncView, View
 if TYPE_CHECKING:
     from ..client import BaseClient  # noqa: F401
 
-ClientType = TypeVar("ClientType", bound="BaseClient")
+ClientType = TypeVar("ClientType", bound="BaseClient", covariant=True)
 NativeType = TypeVar("NativeType")
-BoundSelf = TypeVar("BoundSelf", bound="BoundModule")
+BoundSelf = TypeVar("BoundSelf", bound="BoundModule[BaseClient]")
 SyncSelf = TypeVar("SyncSelf", bound="SyncModule")
 AsyncSelf = TypeVar("AsyncSelf", bound="AsyncModule")
 
@@ -75,7 +76,7 @@ class BaseModule:
         repr_data = (self.__class__.__name__, "record", *self._repr_data())
         return f"<{' '.join(repr_data)}>"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Test if this record reference is equal to another.
 
         Records are treated equal if their module and id match. When comparing two
@@ -96,7 +97,7 @@ class BaseModule:
     # Record instance - data management #
     #####################################
 
-    def __getitem__(self, item) -> JsonType:
+    def __getitem__(self, item: str) -> JsonType:
         if not isinstance(item, str):
             raise TypeError("module keys must be strings")
 
@@ -114,7 +115,7 @@ class BaseModule:
         # inside the inner 'except' in order to keep stack traces clean.
         raise KeyError(item)
 
-    def _set_data(self, data: JsonMapping):
+    def _set_data(self, data: JsonMapping) -> None:
         self._original_data = {
             key: value for key, value in data.items() if not key.startswith("_")
         }
@@ -225,7 +226,7 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
     def _repr_data(self) -> Sequence[str]:
         return (f"(via {self._api_name})", *super()._repr_data())
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Test if this record reference is equal to another.
 
         Records are treated equal if their module and id match. When comparing two
@@ -243,7 +244,7 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
                 return False
         return super().__eq__(other)
 
-    def _set_data(self, data: JsonMapping):
+    def _set_data(self, data: JsonMapping) -> None:
         if data.get("_module", self._api_name) != self._api_name:
             raise ValueError(
                 f"trying to set {self.__class__.__name__} record data the wrong API "
@@ -294,14 +295,14 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
                 raise ValueError("cannot change a record's ID")
             return "put", f"{self._api_name}/{record_id}", data
 
-    def _finalize_save(self, record_data: JsonMapping):
+    def _finalize_save(self, record_data: JsonMapping) -> None:
         self._set_data(record_data)
 
     @abc.abstractmethod
     def save(self) -> SyncOrAsync:
         """Save all updated fields back to the server."""
 
-    def _finalize_delete(self):
+    def _finalize_delete(self) -> None:
         # Merge any updated data into the original data set (because we no longer have
         # a server-side record to match).
         data_keys = set(self._updated_data.keys()) | set(self._original_data.keys())
@@ -310,7 +311,7 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
             del self._original_data["id"]
         self._updated_data = {}
 
-    def _finalize_refresh(self, record_data: JsonMapping):
+    def _finalize_refresh(self, record_data: JsonMapping) -> None:
         self._set_data(record_data)
 
     @abc.abstractmethod
@@ -369,7 +370,7 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
         assert isinstance(item, cls)
         return item
 
-    def _cache_self(self):
+    def _cache_self(self) -> None:
         self._record_cache[self._id] = self
 
     @classmethod
@@ -392,16 +393,16 @@ class SyncModule(BoundModule[SyncClient], abc.ABC):
             view = view.filtered(*filters)
         return view
 
-    def save(self):
+    def save(self) -> None:
         method, endpoint, data = self._prepare_save()
         record_data = self.client.request(method, endpoint, json=data)
         self._finalize_save(record_data)
 
-    def delete(self):
+    def delete(self) -> None:
         self.client.request("delete", self._mutation_endpoint)
         self._finalize_delete()
 
-    def refresh(self, *, _record_data: Optional[JsonMapping] = None):
+    def refresh(self, *, _record_data: Optional[JsonMapping] = None) -> None:
         record_data = self.client.request("get", self._mutation_endpoint)
         self._finalize_refresh(record_data)
 
@@ -422,16 +423,16 @@ class AsyncModule(BoundModule[AsyncClient], abc.ABC):
             view = view.filtered(*filters)
         return view
 
-    async def save(self):
+    async def save(self) -> None:
         method, endpoint, data = self._prepare_save()
         record_data = await self.client.request(method, endpoint, json=data)
         self._finalize_save(record_data)
 
-    async def delete(self):
+    async def delete(self) -> None:
         await self.client.request("delete", self._mutation_endpoint)
         self._finalize_delete()
 
-    async def refresh(self, *, _record_data: Optional[JsonMapping] = None):
+    async def refresh(self, *, _record_data: Optional[JsonMapping] = None) -> None:
         record_data = await self.client.request("get", self._mutation_endpoint)
         self._finalize_refresh(record_data)
 

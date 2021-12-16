@@ -7,12 +7,14 @@ from typing import Union
 from ..utils import JsonMapping
 from .types import Combinator, GenericFilter
 
+FilterOrMapping = Union[GenericFilter, JsonMapping]
+
 
 class FilterSet:
     def __init__(
         self,
         combinator: Combinator,
-        *given_parts: Union[JsonMapping, GenericFilter, None],
+        *given_parts: Union[FilterOrMapping, None],
     ):
         self.combinator = combinator
         self._parts = list(given_parts)
@@ -73,27 +75,29 @@ class FilterSet:
             self._parts[index] = copy.deepcopy(part)
             index += 1
 
-    def __or__(self, other):
+    def __or__(self, other: FilterOrMapping) -> FilterSet:
         return self._combine(self, other, Combinator.OR)
 
-    def __ror__(self, other):
+    def __ror__(self, other: FilterOrMapping) -> FilterSet:
         return self._combine(other, self, Combinator.OR)
 
-    def __and__(self, other):
+    def __and__(self, other: FilterOrMapping) -> FilterSet:
         return self._combine(self, other, Combinator.AND)
 
-    def __rand__(self, other):
+    def __rand__(self, other: FilterOrMapping) -> FilterSet:
         return self._combine(other, self, Combinator.AND)
 
     @staticmethod
-    def _combine(first: FilterSet, second: FilterSet, combinator: Combinator):
+    def _combine(
+        first: FilterOrMapping, second: FilterOrMapping, combinator: Combinator
+    ) -> FilterSet:
         if isinstance(first, (GenericFilter, Mapping)) and isinstance(
             second, (GenericFilter, Mapping)
         ):
             return FilterSet(combinator, first, second)
         return NotImplemented
 
-    def build_filter(self) -> dict:
+    def build_filter(self) -> JsonMapping:
         return {
             self.combinator.value: [
                 copy.deepcopy(

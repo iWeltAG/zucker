@@ -204,7 +204,7 @@ class BaseClient(abc.ABC):
                 },
             )
 
-    def _finalize_authentication(self, data: Any):
+    def _finalize_authentication(self, data: Any) -> None:
         """Process the result from the authentication call and save the required
         tokens."""
         response = check_json_mapping(data)
@@ -296,7 +296,7 @@ class SyncClient(BaseClient, abc.ABC):
     ) -> JsonMapping:
         ...
 
-    def fetch_metadata(self, *types: str):
+    def fetch_metadata(self, *types: str) -> None:
         """Make sure server metadata for the given set of types is available."""
         self._metadata.update(
             self.request(
@@ -323,7 +323,7 @@ class AsyncClient(BaseClient):
     ) -> JsonMapping:
         ...
 
-    async def fetch_metadata(self, *types: str):
+    async def fetch_metadata(self, *types: str) -> None:
         """Make sure server metadata for the given set of types is available."""
         self._metadata.update(
             await self.request(

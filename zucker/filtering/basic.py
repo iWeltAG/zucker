@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from abc import ABC
 from numbers import Number
-from typing import Generic
+from typing import Any, Generic, Sequence, TypeVar, Union, cast
 
-from ..utils import ApiType
+from ..utils import ApiType, JsonMapping
 from .combining import FilterSet
 from .types import Combinator
 
+Filters = TypeVar("Filters")
 
-class BasicFilter(ABC):
+
+class BasicFilter(Generic[Filters], ABC):
     """This is the most basic sort of filter - it checks if some specific field matches
     a condition.
 
@@ -18,19 +20,19 @@ class BasicFilter(ABC):
     ``&`` and ``|`` operators to create more complex filter sets.
     """
 
-    def __init__(self, field_name: str, filters):
+    def __init__(self, field_name: str, filters: Filters):
         self.field_name = field_name
         self.filters = filters
 
-    def __or__(self, other):
-        if isinstance(other, BasicFilter):
-            return FilterSet(Combinator.OR, self, other)
-        return NotImplemented
+    def __or__(self, other: BasicFilter[Any]) -> FilterSet:
+        if not isinstance(other, BasicFilter):
+            return NotImplemented  # type: ignore
+        return FilterSet(Combinator.OR, self, other)
 
-    def __and__(self, other):
-        if isinstance(other, BasicFilter):
-            return FilterSet(Combinator.AND, self, other)
-        return NotImplemented
+    def __and__(self, other: BasicFilter[Any]) -> FilterSet:
+        if not isinstance(other, BasicFilter):
+            return NotImplemented  # type: ignore
+        return FilterSet(Combinator.AND, self, other)
 
     @property
     def operator(self) -> str:
@@ -39,21 +41,23 @@ class BasicFilter(ABC):
         )
 
     @property
-    def filter_value(self):
+    def filter_value(self) -> Filters:
         return self.filters
 
-    def build_filter(self) -> dict:
+    def build_filter(self) -> JsonMapping:
         return {self.field_name: {self.operator: self.filter_value}}
 
 
-class NegatableFilter(BasicFilter, ABC):
-    def __invert__(self) -> NegatableFilter:
+class NegatableFilter(Generic[Filters], BasicFilter[Filters], ABC):
+    def __invert__(self) -> NegatableFilter[Filters]:
         raise NotImplementedError(
             "subclasses of NegatableFilter must implement the __invert__ protocol"
         )
 
 
-class ValuesFilter(Generic[ApiType], NegatableFilter):
+class ValuesFilter(
+    Generic[ApiType], NegatableFilter[Union[ApiType, Sequence[ApiType]]]
+):
     """Basic filter that checks if the field exactly matches specified values.
 
     The constructor takes a field name and at least one value to test for. When one
@@ -72,27 +76,34 @@ class ValuesFilter(Generic[ApiType], NegatableFilter):
             raise ValueError("did not provide any values for a value filter")
 
         self.negated = False
+        self._single = False
 
-        super().__init__(field_name, list(filters))
+        if len(filters) == 1:
+            super().__init__(field_name, filters[0])
+            self._single = True
+        else:
+            super().__init__(field_name, filters)
 
-    def __invert__(self) -> ValuesFilter:
-        result = ValuesFilter(self.field_name, *self.filters)
+    def __invert__(self) -> ValuesFilter[ApiType]:
+        result: ValuesFilter[ApiType]
+        if self._single:
+            result = ValuesFilter(self.field_name, cast("ApiType", self.filters))
+        else:
+            result = ValuesFilter(
+                self.field_name, *(cast("Sequence[ApiType]", self.filters))
+            )
         result.negated = not self.negated
         return result
 
     @property
     def operator(self) -> str:
-        if len(self.filters) == 1:
+        if self._single:
             return "$not_equals" if self.negated else "$equals"
         else:
             return "$not_in" if self.negated else "$in"
 
-    @property
-    def filter_value(self):
-        return self.filters[0] if len(self.filters) == 1 else self.filters
 
-
-class NullishFilter(NegatableFilter):
+class NullishFilter(NegatableFilter[None]):
     """Basic filter that checks if the field is None (or ``null`` in Sugar).
 
     This filter can be negated using the ``~`` operator.
@@ -113,7 +124,7 @@ class NullishFilter(NegatableFilter):
         return "$not_null" if self.negated else "$is_null"
 
 
-class StringFilter(BasicFilter, ABC):
+class StringFilter(BasicFilter[str], ABC):
     def __init__(self, field_name: str, value: str):
         if not isinstance(value, str):
             raise TypeError(
@@ -149,7 +160,7 @@ class StringContainsFilter(StringFilter):
         return "$ends"
 
 
-class NumericFilter(NegatableFilter):
+class NumericFilter(NegatableFilter[Number]):
     def __init__(
         self,
         field_name: str,

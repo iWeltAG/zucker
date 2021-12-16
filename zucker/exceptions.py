@@ -1,3 +1,6 @@
+from .utils import JsonMapping
+
+
 class ZuckerException(Exception):
     """Base class for all errors raised by Zucker."""
 
@@ -15,7 +18,8 @@ class SugarError(ZuckerException):
     code.
     """
 
-    def __init__(self, status_code, body, *args):
+    def __init__(self, status_code: int, body: JsonMapping, *args):
+        assert "error_message" in body
         super(SugarError, self).__init__(body["error_message"], *args)
         self.status_code = status_code
 

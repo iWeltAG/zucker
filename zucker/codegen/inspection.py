@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -19,9 +20,14 @@ from zucker.utils import JsonMapping, JsonPrimitive
 if TYPE_CHECKING:
     from zucker.model.fields.base import Field
 
-    FieldInitializerReturnType = Optional[tuple[Type[Field], Mapping[str, Any]]]
-    JsonPrimitiveOrCheckFn = Union[JsonPrimitive, Type, Callable[[JsonPrimitive], bool]]
+    FieldInitializerReturnType = Optional[
+        tuple[Type[Field[Any, Any]], Mapping[str, Any]]
+    ]
+    JsonPrimitiveOrCheckFn = Union[
+        JsonPrimitive, Type[Any], Callable[[JsonPrimitive], bool]
+    ]
 
+_F = TypeVar("_F", bound="Field[Any, Any]", covariant=True)
 
 __all__ = [
     "InspectedModule",
@@ -43,7 +49,7 @@ class InspectedModule:
 @dataclass
 class InspectedField:
     name: str
-    field_type: Type[Field]
+    field_type: Type[Field[Any, Any]]
     arguments: Mapping[str, Any]
     raw_metadata: JsonMapping
 
@@ -55,11 +61,11 @@ class FieldInspectionContext:
 
 
 class FieldMetadataRegistry:
-    def __init__(self):
+    def __init__(self) -> None:
         self.field_initializers: list[
             Callable[[FieldInspectionContext], FieldInitializerReturnType]
         ] = []
-        self.field_types: set[Type[Field]] = set()
+        self.field_types: set[Type[Field[Any, Any]]] = set()
 
     def __call__(self, context: FieldInspectionContext) -> FieldInitializerReturnType:
         results = (initialize(context) for initialize in self.field_initializers)
@@ -83,7 +89,7 @@ class FieldMetadataRegistry:
             Mapping[str, Any],
             Callable[[FieldInspectionContext], Mapping[str, Any]],
         ] = None,
-    ):
+    ) -> Callable[[Type[_F]], Type[_F]]:
         """Register a server-side metadata construct that this field supports.
 
         The attribute options passed here are the ones you get when querying server
@@ -110,7 +116,7 @@ class FieldMetadataRegistry:
         .. _Sugar Documentation: https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_10.0/Data_Framework/Vardefs/#Fields_Array
         """
 
-        def decorate(field_type: Type[Field]):
+        def decorate(field_type: Type[_F]) -> Type[_F]:
             def initialize(
                 context: FieldInspectionContext,
             ) -> FieldInitializerReturnType:
@@ -195,13 +201,15 @@ def get_metadata(client: SyncClient) -> JsonMapping:
 
 
 def inspect_modules_with_fields(metadata: Any) -> Sequence[InspectedModule]:
-    def assert_sugar_mapping(mapping):
+    # TODO Convert these to actual type guards:
+
+    def assert_sugar_mapping(mapping: Any) -> None:
         if not isinstance(mapping, Mapping):
             raise InvalidSugarResponseError(
                 f"expecting mapping type, got {type(mapping)!r}"
             )
 
-    def assert_sugar_contains(mapping, name: str):
+    def assert_sugar_contains(mapping: Any, name: str) -> None:
         assert_sugar_mapping(mapping)
         if name not in mapping:
             raise InvalidSugarResponseError(f"expecting mapping that contains {name!r}")

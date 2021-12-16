@@ -9,7 +9,7 @@ from .inspect import run_inspect
 
 
 class PromptPasswordAction(argparse.Action):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         kwargs.setdefault("nargs", 0)
         super().__init__(*args, **kwargs)
 
@@ -19,7 +19,7 @@ class PromptPasswordAction(argparse.Action):
         namespace: argparse.Namespace,
         values: Union[str, Sequence[str], None],
         option_string: Optional[str] = None,
-    ):
+    ) -> None:
         if option_string in self.option_strings:
             if getattr(namespace, self.dest, None) is not None:
                 parser.error(
@@ -28,7 +28,7 @@ class PromptPasswordAction(argparse.Action):
             setattr(namespace, self.dest, getpass())
 
 
-def run_from_command_line():
+def run_from_command_line() -> None:
     parser = argparse.ArgumentParser(
         description="Automatically generate zucker model classes from a remote Sugar "
         "CRM instance.",

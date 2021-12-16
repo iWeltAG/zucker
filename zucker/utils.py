@@ -27,9 +27,9 @@ ApiType = TypeVar("ApiType", bound=JsonType)
 
 def check_json_primitive(data: Any) -> JsonPrimitive:
     """Check if the provided object is a valid JSON primitive and return it."""
-    if not isinstance(data, (type(None), bool, str, int, float)):  # type: ignore
+    if not isinstance(data, (type(None), bool, str, int, float)):
         raise TypeError(f"expected JSON primitive, got f{data}")
-    return cast(JsonPrimitive, data)
+    return data
 
 
 def check_json_mapping(data: Any) -> JsonMapping:

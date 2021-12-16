@@ -10,22 +10,14 @@ from zucker.utils import JsonType
 
 from .base import MutableScalarField, ScalarField
 
-__all__ = ["FullnameFields", "DatetimeField", "StringField", "BooleanField", "IdField"]
-
-
-class FullnameFields(ScalarField):
-    ...
-
-
-class DatetimeField(MutableScalarField[datetime, str]):
-    ...
+__all__ = ["StringField", "BooleanField", "IdField"]
 
 
 @field_for_metadata.register(metadata_attributes=dict(type="varchar"), require_db=True)
 @field_for_metadata.register(metadata_attributes=dict(type="text"), require_db=True)
 class StringField(MutableScalarField[str, str]):
     @staticmethod
-    def load_value(raw_value):
+    def load_value(raw_value: JsonType) -> str:
         if not isinstance(raw_value, str):
             raise ValueError(
                 f"string field must be populated with a str - got {type(raw_value)!r}"
@@ -33,7 +25,7 @@ class StringField(MutableScalarField[str, str]):
         return raw_value
 
     @staticmethod
-    def serialize(value):
+    def serialize(value: str) -> str:
         return value
 
     def starts_with(self, prefix: str) -> filtering.StringFilter:
@@ -52,7 +44,7 @@ class StringField(MutableScalarField[str, str]):
 @field_for_metadata.register(metadata_attributes=dict(type="bool"), require_db=True)
 class BooleanField(MutableScalarField[bool, bool]):
     @staticmethod
-    def load_value(raw_value):
+    def load_value(raw_value: JsonType) -> bool:
         if not isinstance(raw_value, bool):
             raise ValueError(
                 f"boolean field must be populated with a boolean - got "
@@ -61,7 +53,7 @@ class BooleanField(MutableScalarField[bool, bool]):
         return raw_value
 
     @staticmethod
-    def serialize(value):
+    def serialize(value: bool) -> bool:
         return value
 
     def true(self) -> filtering.ValuesFilter[bool]:

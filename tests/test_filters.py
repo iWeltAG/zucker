@@ -134,7 +134,7 @@ def test_field_values_filter():
     assert (DemoField("name") == "Ben").build_filter() == result
 
     assert DemoField("last_name").values("Paul", "Spencer").build_filter() == {
-        "last_name": {"$in": ["Paul", "Spencer"]}
+        "last_name": {"$in": ("Paul", "Spencer")}
     }
 
     result = {"name": {"$not_equals": "Mike"}}
@@ -143,7 +143,7 @@ def test_field_values_filter():
 
     assert (
         ~DemoField("last_name").values("Emma", "Rachel", "Steven")
-    ).build_filter() == {"last_name": {"$not_in": ["Emma", "Rachel", "Steven"]}}
+    ).build_filter() == {"last_name": {"$not_in": ("Emma", "Rachel", "Steven")}}
 
 
 def test_field_null_filter():

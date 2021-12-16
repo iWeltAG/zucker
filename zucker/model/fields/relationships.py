@@ -25,7 +25,7 @@ class RelatedField(
         from ..module import AsyncModule, BaseModule, SyncModule
 
         if not issubclass(related_module, (SyncModule, AsyncModule)):
-            if issubclass(related_module, BaseModule):
+            if issubclass(related_module, BaseModule):  # type: ignore
                 raise TypeError(
                     f"related fields must be initialized with a bound module - got the "
                     f"unbound variant {related_module!r}"

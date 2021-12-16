@@ -87,7 +87,7 @@ def format_module(module: InspectedModule) -> str:
     )
 
 
-def run_inspect(client: SyncClient, **kwargs):
+def run_inspect(client: SyncClient, **kwargs) -> None:
     metadata = get_metadata(client)
     modules = inspect_modules_with_fields(metadata)
 
