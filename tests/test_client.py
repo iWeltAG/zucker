@@ -33,7 +33,7 @@ def fake_server(monkeypatch) -> Callable[[HandlerType], None]:
         nonlocal handler
         handler = handler_callable
 
-    def fake_request(request_method, path, **kwargs):
+    def fake_request(self, request_method, path, **kwargs):
         kwargs.setdefault("headers", {})
         kwargs.setdefault("data", {})
 
@@ -50,7 +50,7 @@ def fake_server(monkeypatch) -> Callable[[HandlerType], None]:
         else:
             raise RuntimeError(f"requesting non-mocked path: {path!r} ({method})")
 
-    monkeypatch.setattr(requests, "request", fake_request)
+    monkeypatch.setattr(requests.Session, "request", fake_request)
     for method in ("get", "post"):
         monkeypatch.setattr(requests, method, partial(fake_request, method))
 

@@ -1,7 +1,5 @@
 from typing import Optional
 
-from aiohttp import ClientSession
-
 from zucker.exceptions import SugarError, ZuckerException
 from zucker.utils import JsonMapping
 
@@ -15,9 +13,11 @@ class AioClient(AsyncClient):
     """
 
     def __init__(self, *args, **kwargs):
+        import aiohttp
+
         super().__init__(*args, **kwargs)
 
-        self._session: Optional[ClientSession] = None
+        self._session: Optional[aiohttp.ClientSession] = None
 
     async def close(self) -> None:
         if self._session is not None:
@@ -33,8 +33,10 @@ class AioClient(AsyncClient):
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
     ) -> JsonMapping:
+        import aiohttp
+
         if self._session is None:
-            self._session = ClientSession()
+            self._session = aiohttp.ClientSession()
             # The following doesn't actually do anything at the moment, but that might
             # change in a future version of aiohttp.
             await self._session.__aenter__()

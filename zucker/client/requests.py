@@ -1,6 +1,4 @@
-from typing import Optional
-
-import requests
+from typing import TYPE_CHECKING, Optional
 
 from zucker.exceptions import SugarError, ZuckerException
 from zucker.utils import JsonMapping
@@ -14,6 +12,12 @@ class RequestsClient(SyncClient):
     .. _requests: https://docs.python-requests.org/en/latest/
     """
 
+    def __init__(self, *args, **kwargs):
+        import requests
+
+        super().__init__(*args, **kwargs)
+        self._session = requests.Session()
+
     def request(
         self,
         method: str,
@@ -26,21 +30,24 @@ class RequestsClient(SyncClient):
         auth_payload = self._prepare_authentication()
         if auth_payload is not None:
             auth_job_name, auth_endpoint, auth_data = auth_payload
-            request = requests.post(
+            response = self._session.request(
+                # We use .request("post") instead of .post() here because that's easier
+                # to test.
+                "post",
                 f"{self.base_url}/rest/v11_5/{auth_endpoint}",
                 headers={"Cache-Control": "no-cache"},
                 verify=self._verify_ssl,
                 data=auth_data,
             )
-            if request.ok:
-                self._finalize_authentication(request.json())
+            if response.ok:
+                self._finalize_authentication(response.json())
             else:
                 raise ZuckerException(
-                    f"{auth_job_name} failed with status code {request.status_code} "
-                    f"and message {request.text!r}"
+                    f"{auth_job_name} failed with status code {response.status_code} "
+                    f"and message {response.text!r}"
                 )
 
-        request = requests.request(
+        response = self._session.request(
             method,
             f"{self.base_url}/rest/v11_5/{endpoint}",
             headers={
@@ -53,7 +60,7 @@ class RequestsClient(SyncClient):
             json=json or {},
         )
 
-        if request.ok:
-            return self._finalize_request(request.json())
+        if response.ok:
+            return self._finalize_request(response.json())
         else:
-            raise SugarError(request.status_code, request.json())
+            raise SugarError(response.status_code, response.json())
