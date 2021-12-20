@@ -79,7 +79,7 @@ class BaseClient(abc.ABC):
 
         self._metadata: MutableJsonMapping = {}
 
-    def __contains__(self, item: Union[str, Type[BoundModule]]) -> bool:
+    def __contains__(self, item: Union[str, Type[BoundModule[Any]]]) -> bool:
         """Check if the server supports a given module name."""
         from zucker.model.module import BoundModule
 

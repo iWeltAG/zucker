@@ -154,8 +154,6 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         if isinstance(item, (UUID, str)):
             item = str(item)
             record = self.get_by_id(item)
-            if record is None:
-                raise KeyError(item)
 
             # Ignore this type for now until MyPy supports generic self types. See the
             # comment in __get__ in the base Field class for details.
@@ -164,8 +162,6 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         # Second case - retrieving a single record by it's offset in the view.
         elif isinstance(item, int):
             record = self.get_by_index(item)
-            if record is None:
-                raise IndexError(item)
 
             # Same typing stuff as above.
             return record  # type: ignore
@@ -498,7 +494,8 @@ class SyncView(
         try:
             return self._prepare_get_by_id(key)[0]
         except IndexError:
-            return None
+            pass
+        raise KeyError(key)
 
     def _get_by_offset(self, offset: int) -> Optional[SyncModuleType]:
         preparation = self._prepare_get_by_offset(offset)
@@ -512,8 +509,11 @@ class SyncView(
     def get_by_index(self, index: int) -> Optional[SyncModuleType]:
         offset = self._index_to_offset(index)
         if offset is None:
-            return None
-        return self._get_by_offset(offset)
+            raise IndexError(index)
+        record = self._get_by_offset(offset)
+        if record is None:
+            raise IndexError(index)
+        return record
 
 
 class AsyncView(
@@ -528,7 +528,8 @@ class AsyncView(
         try:
             return await self._prepare_get_by_id(key)[0]
         except IndexError:
-            return None
+            pass
+        raise KeyError(key)
 
     async def _get_by_offset(self, offset: int) -> Optional[AsyncModuleType]:
         preparation = self._prepare_get_by_offset(offset)
@@ -545,4 +546,7 @@ class AsyncView(
         offset = self._index_to_offset(index)
         if offset is None:
             return None
-        return await self._get_by_offset(offset)
+        record = await self._get_by_offset(offset)
+        if record is None:
+            raise IndexError(index)
+        return record
