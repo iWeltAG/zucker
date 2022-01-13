@@ -11,11 +11,12 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from zucker.client import SyncClient
 from zucker.exceptions import InvalidSugarResponseError
-from zucker.utils import JsonMapping, JsonPrimitive
+from zucker.utils import JsonMapping, JsonPrimitive, JsonType
 
 if TYPE_CHECKING:
     from zucker.model.fields.base import Field
@@ -128,13 +129,14 @@ class FieldMetadataRegistry:
                     # of 'full_text_search.enabled' we are actually looking at the
                     # full_text_search subtree.
                     path_names = key.split(".")
-                    current_item = context.field_metadata
+                    current_item: Union[JsonMapping, JsonType] = context.field_metadata
                     for path_name in path_names:
                         if not isinstance(current_item, Mapping):
                             return None
                         if path_name not in current_item:
                             return None
-                        current_item = current_item[path_name]  # type: ignore
+                        current_item = current_item[path_name]
+                    value = cast(JsonType, current_item)
 
                     # current_item should now be the expected value. The latter may
                     # either be given directly, as a type or as a callable.
