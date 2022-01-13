@@ -16,7 +16,7 @@ jobs:
         nix build .#docs
         echo "::set-output name=HTML_PATH::$(readlink -f result)"
     - if: success()
-      uses: crazy-max/ghaction-github-pages@v2
+      uses: yrd/ghaction-github-pages@d57754dd075c95169e49d25d23d2c07d64de4c53
       with:
         target_branch: gh-pages
         # Use the output from the last step as the path we want do deploy form.
