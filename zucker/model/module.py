@@ -15,6 +15,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 from weakref import WeakValueDictionary
 
@@ -180,20 +181,20 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
     saved, refreshed and deleted.
     """
 
-    _CLIENT_TYPE: ClassVar[Type[ClientType]]
-    _client: ClassVar[ClientType]
+    _CLIENT_TYPE: ClassVar[Type[BaseClient]]
+    _client: ClassVar[BaseClient]
     _api_name: ClassVar[str]
 
     # Cache object that allows direct access to records by their ID. References here are
     # held weakly - that means that once the corresponding view is garbage collected,
     # entries in this cache may no longer be accessible.
-    _record_cache: ClassVar[MutableMapping[str, BoundModule[ClientType]]]
+    _record_cache: ClassVar[MutableMapping[str, BoundModule[BaseClient]]]
 
     def __init_subclass__(
         cls,
+        *,
         client: Optional[ClientType] = None,
         api_name: Optional[str] = None,
-        **kwargs,
     ):
         if not abc.ABC in cls.__bases__:
             if not isinstance(client, cls._CLIENT_TYPE):
@@ -212,7 +213,8 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
         This client will be used for all server-side communication. Further, any caches
         are scoped to this client.
         """
-        return cls._client
+        assert isinstance(cls._client, cls._CLIENT_TYPE)
+        return cast(ClientType, cls._client)
 
     @property
     def client(self) -> ClientType:

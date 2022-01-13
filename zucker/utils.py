@@ -18,6 +18,7 @@ __all__ = [
 # JsonType = Union[None, bool, str, int, float, Mapping[str, "JsonType"], Sequence["JsonType"]]
 JsonPrimitive = Union[None, bool, str, int, float]
 JsonType = Union[JsonPrimitive, Mapping, Sequence]
+NonNoneJsonType = Union[bool, str, int, float, Mapping, Sequence]
 
 JsonMapping = Mapping[str, JsonType]
 MutableJsonMapping = MutableMapping[str, JsonType]

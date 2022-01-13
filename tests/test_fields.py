@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -25,7 +27,7 @@ class DemoField(MutableField[str, str, str]):
     def _get_value(self, record: BaseModule) -> str:
         return "strawberry"
 
-    def _set_value(self, record: BaseModule, value: str):
+    def _set_value(self, record: BaseModule, value: str) -> None:
         if value != "raspberry":
             raise ValueError("must set 'raspberry'")
 
@@ -35,11 +37,11 @@ class BaseDemo(UnboundModule):
     other_thing = DemoField(api_name="something")
 
 
-def test_field_name():
+def test_field_name() -> None:
     with pytest.raises(RuntimeError):
         DemoField().name
     with pytest.raises(TypeError):
-        DemoField(api_name=False)
+        DemoField(api_name=False)  # type: ignore
     with pytest.raises(ValueError):
         DemoField(api_name="this is not valid")
     with pytest.raises(ValueError):
@@ -59,16 +61,16 @@ def test_getting_and_setting(client: SyncClient) -> None:
 
 
 @given(st.text())
-def test_string_field_values(raw_value):
+def test_string_field_values(raw_value: str) -> None:
     assert StringField.serialize(StringField.load_value(raw_value)) == raw_value
 
 
 @given(st.booleans())
-def test_boolean_field_values(raw_value):
+def test_boolean_field_values(raw_value: bool) -> None:
     assert BooleanField.serialize(BooleanField.load_value(raw_value)) == raw_value
 
 
-def test_related_field_initialization(client: SyncClient):
+def test_related_field_initialization(client: SyncClient) -> None:
     class Demo(SyncModule, BaseDemo, client=client):
         pass
 
@@ -80,14 +82,14 @@ def test_related_field_initialization(client: SyncClient):
         RelatedField(BaseDemo, "demo")  # type: ignore
     for link_name in ("", "   "):
         with pytest.raises(ValueError, match="related link names"):
-            RelatedField(Demo, link_name)
+            RelatedField[Demo, Any](Demo, link_name)
 
 
-def test_related_view_building(client: SyncClient):
+def test_related_view_building(client: SyncClient) -> None:
     class Demo(SyncModule, BaseDemo, client=client):
         pass
 
-    field = RelatedField(Demo, "some_link")
+    field = RelatedField[Demo, Any](Demo, "some_link")
     with pytest.raises(ValueError):
         field._get_value(Demo())
     result = field._get_value(Demo(id="the_id"))

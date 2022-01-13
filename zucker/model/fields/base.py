@@ -28,7 +28,7 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
     module.
     """
 
-    def __init__(self, api_name: Optional[str] = None, **kwargs):
+    def __init__(self, api_name: Optional[str] = None, **kwargs: Any):
         self._api_name = api_name
         self._name: Optional[str] = "test"
         # Check the name to make sure it's valid.

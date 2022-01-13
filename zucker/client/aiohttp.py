@@ -12,10 +12,24 @@ class AioClient(AsyncClient):
     .. _aiohttp: https://docs.aiohttp.org/en/latest/index.html
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        *,
+        client_platform: str = "zucker",
+        verify_ssl: bool = True,
+    ):
         import aiohttp
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            base_url,
+            username,
+            password,
+            client_platform=client_platform,
+            verify_ssl=verify_ssl,
+        )
 
         self._session: Optional[aiohttp.ClientSession] = None
 

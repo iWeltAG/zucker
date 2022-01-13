@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, Type, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Type, Union, cast, overload
 
 from ...exceptions import WrongClientError, WrongParadigmError
 from ..view import AsyncModuleType, AsyncView, SyncModuleType, SyncView
@@ -20,7 +20,7 @@ class RelatedField(
         self,
         related_module: Union[Type[SyncModuleType], Type[AsyncModuleType]],
         link_name: str,
-        **kwargs,
+        **kwargs: Any,
     ):
         from ..module import AsyncModule, BaseModule, SyncModule
 

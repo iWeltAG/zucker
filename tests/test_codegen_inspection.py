@@ -21,8 +21,13 @@ def field_names(draw: st.DrawFn) -> str:
 
 
 def augment_field_data(
-    *, draw: st.DrawFn, arguments: dict, raw_metadata: dict, name: str, **kwargs
-):
+    *,
+    draw: st.DrawFn,
+    arguments: MutableJsonMapping,
+    raw_metadata: MutableJsonMapping,
+    name: str,
+    **kwargs: None,
+) -> None:
     """Add common arguments and metadata when generating inspected fields.
 
     This function doesn't really follow best practices, but it works for testing here.
@@ -102,7 +107,7 @@ def inspected_modules(draw: st.DrawFn) -> InspectedModule:
 
 
 @given(st.lists(st.text()))
-def test_indenting(lines: list[str]):
+def test_indenting(lines: list[str]) -> None:
     all_lines = "\n".join(lines).split("\n")
     for steps in range(0, 10):
         expected_result = "\n".join("  " * steps + line for line in all_lines)
@@ -111,7 +116,7 @@ def test_indenting(lines: list[str]):
 
 
 @given(inspected_scalar_fields())
-def test_field_resolving(inspected_field: InspectedField):
+def test_field_resolving(inspected_field: InspectedField) -> None:
     context = FieldInspectionContext(
         # Here, the metadata object from the generated inspection result is used to see
         # if an actual inspection yields the same result.
@@ -125,7 +130,7 @@ def test_field_resolving(inspected_field: InspectedField):
 
 
 @given(inspected_modules())
-def test_module_inspection(module: InspectedModule):
+def test_module_inspection(module: InspectedModule) -> None:
     metadata = {"modules": {module.name: module.raw_metadata}}
 
     inspection_result = inspect_modules_with_fields(metadata)

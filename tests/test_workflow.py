@@ -28,13 +28,12 @@ def live_client() -> SyncClient:
 
 
 @st.composite
-def names(draw: st.DrawFn, **kwargs):
-    kwargs.setdefault("min_size", 4)
-    kwargs.setdefault("max_size", 100)
+def names(draw: st.DrawFn, min_size: int = 4, max_size: int = 100) -> str:
     return draw(
         st.text(
             st.characters(whitelist_categories=("L",)),
-            **kwargs,
+            min_size=min_size,
+            max_size=max_size,
         )
     )
 
@@ -53,7 +52,7 @@ class BaseLead(model.UnboundModule):
 @given(names(), names(), st.text(min_size=10))
 def test_crud(
     live_client: SyncClient, first_name: str, last_name: str, description: str
-):
+) -> None:
     """This test runs a complete workflow for working with records.
 
     The following steps will be performed on a live Sugar instance:

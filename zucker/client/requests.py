@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Any, Optional
 
 from zucker.exceptions import SugarError, ZuckerException
 from zucker.utils import JsonMapping
@@ -12,10 +12,24 @@ class RequestsClient(SyncClient):
     .. _requests: https://docs.python-requests.org/en/latest/
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        *,
+        client_platform: str = "zucker",
+        verify_ssl: bool = True,
+    ):
         import requests
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            base_url,
+            username,
+            password,
+            client_platform=client_platform,
+            verify_ssl=verify_ssl,
+        )
         self._session = requests.Session()
 
     def request(

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Optional
+from typing import Any, Callable, Mapping, Optional, Protocol
 from uuid import uuid4
 
 import pytest
@@ -7,33 +7,49 @@ import requests
 
 from zucker import RequestsClient, SugarError, model
 from zucker.client import SyncClient
+from zucker.utils import JsonMapping, JsonType
 
 
 class MockResponse:
-    def __init__(self, data, status_code=200):
+    def __init__(self, data: JsonType, status_code: int = 200):
         self.data = data
         self.status_code = status_code
 
     @property
-    def ok(self):
+    def ok(self) -> bool:
         return self.status_code < 400
 
-    def json(self):
+    def json(self) -> JsonType:
         return self.data
 
 
-HandlerType = Callable[[str, str], Optional[MockResponse]]
+class HandlerType(Protocol):
+    def __call__(
+        self,
+        method: str,
+        path: str,
+        *,
+        data: JsonType,
+        headers: JsonMapping,
+        **kwargs: Any,
+    ) -> Optional[MockResponse]:
+        pass
+
+
+FakeServer = Callable[[HandlerType], None]
 
 
 @pytest.fixture
-def fake_server(monkeypatch) -> Callable[[HandlerType], None]:
+def fake_server(monkeypatch: pytest.MonkeyPatch) -> FakeServer:
     handler: Optional[HandlerType] = None
 
-    def set_handler(handler_callable: HandlerType):
+    def set_handler(handler_callable: HandlerType) -> None:
         nonlocal handler
         handler = handler_callable
 
-    def fake_request(self, request_method, path, **kwargs):
+    def fake_request(
+        self: requests.Session, request_method: str, path: str, **kwargs: Any
+    ) -> MockResponse:
         kwargs.setdefault("headers", {})
         kwargs.setdefault("data", {})
 
@@ -58,10 +74,10 @@ def fake_server(monkeypatch) -> Callable[[HandlerType], None]:
 
 
 @pytest.fixture
-def authenticated_client(monkeypatch) -> SyncClient:
+def authenticated_client(monkeypatch: pytest.MonkeyPatch) -> SyncClient:
     client = RequestsClient("http://base", "user", "pass")
 
-    def fake_authentication_payload():
+    def fake_authentication_payload() -> None:
         return None
 
     monkeypatch.setattr(client, "_prepare_authentication", fake_authentication_payload)
@@ -69,7 +85,7 @@ def authenticated_client(monkeypatch) -> SyncClient:
     return client
 
 
-def test_missing_parameters():
+def test_missing_parameters() -> None:
     with pytest.raises(ValueError):
         RequestsClient("http://base", "user", "")
     with pytest.raises(ValueError):
@@ -78,12 +94,19 @@ def test_missing_parameters():
         RequestsClient("", "user", "pass")
 
 
-def test_authentication_and_request(fake_server):
+def test_authentication_and_request(fake_server: FakeServer) -> None:
     access_token = None
     refresh_token = None
 
-    def handle_request(method, path, data, headers, **kwargs):
+    def handle_request(
+        method: str,
+        path: str,
+        data: JsonType,
+        headers: JsonMapping,
+        **kwargs: Any,
+    ) -> Optional[MockResponse]:
         nonlocal access_token, refresh_token
+        assert isinstance(data, Mapping)
 
         if method == "post" and path == "http://base/rest/v11_5/oauth2/token/":
             assert data["client_id"] == "sugar"
@@ -116,6 +139,8 @@ def test_authentication_and_request(fake_server):
         elif method == "get" and path == "http://base/rest/v11_5/errorroute":
             return MockResponse({"error_message": "theerror"}, 500)
 
+        return None
+
     fake_server(handle_request)
 
     client = RequestsClient(
@@ -125,18 +150,20 @@ def test_authentication_and_request(fake_server):
     assert client.request("get", "notaroute")["ping"] == "pong"
     assert client.authenticated
 
-    with pytest.raises(SugarError) as error:
+    # The following statement would be unreachable because of the two
+    # client.authenticated assertions above.
+    with pytest.raises(SugarError) as error:  # type: ignore
         client.request("get", "errorroute")
     assert error.value.status_code == 500
     assert "theerror" in str(error)
 
 
-def test_metadata(authenticated_client: SyncClient, fake_server):
+def test_metadata(authenticated_client: SyncClient, fake_server: FakeServer) -> None:
     server_flavor = "PRO"
     server_version = "9.0.1"
     server_build = "176"
 
-    def handle_request(method, path, **kwargs):
+    def handle_request(method: str, path: str, **kwargs: Any) -> Optional[MockResponse]:
         if method == "get" and path == "http://base/rest/v11_5/metadata":
             return MockResponse(
                 {
@@ -157,6 +184,8 @@ def test_metadata(authenticated_client: SyncClient, fake_server):
                     "_hash": str(uuid4()),
                 }
             )
+
+        return None
 
     fake_server(handle_request)
     client = authenticated_client

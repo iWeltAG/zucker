@@ -1,31 +1,32 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional, Union
 
 import pytest
 
 from zucker.filtering import BasicFilter, Combinator, FilterSet
+from zucker.filtering.combining import FilterOrMapping
 from zucker.model.fields.base import ScalarField
-from zucker.utils import JsonMapping, JsonType
+from zucker.utils import JsonMapping, JsonType, MutableJsonMapping
 
 
-def fs_and(*args) -> FilterSet:
-    return FilterSet(Combinator.AND, *args)
+def fs_and(*given_parts: Union[FilterOrMapping, None]) -> FilterSet:
+    return FilterSet(Combinator.AND, *given_parts)
 
 
-def fs_or(*args) -> FilterSet:
-    return FilterSet(Combinator.OR, *args)
+def fs_or(*given_parts: Union[FilterOrMapping, None]) -> FilterSet:
+    return FilterSet(Combinator.OR, *given_parts)
 
 
-def test_filterset_init():
+def test_filterset_init() -> None:
     with pytest.raises(TypeError):
-        fs_and(1)
+        fs_and(1)  # type: ignore
     with pytest.raises(TypeError):
-        fs_and(False, {})
+        fs_and(False, {})  # type: ignore
 
 
-def test_filterset_building():
+def test_filterset_building() -> None:
     class DummyFilter:
         @staticmethod
-        def build_filter() -> dict:
+        def build_filter() -> JsonMapping:
             return {"is": "okay"}
 
     assert fs_or(DummyFilter(), {"hello": "world"}).build_filter() == {
@@ -36,7 +37,7 @@ def test_filterset_building():
     }
 
 
-def test_filterset_expanding():
+def test_filterset_expanding() -> None:
     assert fs_and({"a": 1}, fs_or({"b": 2})).build_filter() == {
         "$and": [{"a": 1}, {"b": 2}]
     }
@@ -57,7 +58,7 @@ def test_filterset_expanding():
     }
 
 
-def test_filterset_combining():
+def test_filterset_combining() -> None:
     assert (fs_and({"a": 1}) & {"b": 1}).build_filter() == {
         "$and": [{"a": 1}, {"b": 1}]
     }
@@ -68,7 +69,7 @@ def test_filterset_combining():
 
     class DummyFilter:
         @staticmethod
-        def build_filter() -> dict:
+        def build_filter() -> JsonMapping:
             return {"a": 1}
 
     assert ({"a": 1} | fs_or({"b": 2})).build_filter() == {"$or": [{"a": 1}, {"b": 2}]}
@@ -77,7 +78,7 @@ def test_filterset_combining():
     }
 
 
-def test_filterset_immutability():
+def test_filterset_immutability() -> None:
     first_source = {"a": 1}
     first = fs_and(first_source)
     assert first.build_filter() == {"$and": [{"a": 1}]}
@@ -85,7 +86,7 @@ def test_filterset_immutability():
     assert first.build_filter() == {"$and": [{"a": 1}]}
 
     class DummyFilter:
-        x: JsonMapping = {"c": 3}
+        x: MutableJsonMapping = {"c": 3}
 
         def build_filter(self) -> JsonMapping:
             return self.x
@@ -97,7 +98,7 @@ def test_filterset_immutability():
 
 
 class DemoField(ScalarField[Any, Any]):
-    def __init__(self, name: str, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(**kwargs)
         self.__set_name__(None, name)  # type: ignore
 
@@ -110,18 +111,18 @@ class DemoField(ScalarField[Any, Any]):
         return value
 
 
-def test_field_name_errors():
+def test_field_name_errors() -> None:
     for non_str in (2, [3], False):
-        with pytest.raises(TypeError) as error:
+        with pytest.raises(TypeError) as first_error:
             DemoField(non_str)  # type: ignore
-        assert "field name" in str(error.value)
+        assert "field name" in str(first_error.value)
     for invalid_name in ("", "hello world", "   notgood   "):
-        with pytest.raises(ValueError) as error:
+        with pytest.raises(ValueError) as second_error:
             DemoField(invalid_name)
-        assert "field name" in str(error.value)
+        assert "field name" in str(second_error.value)
 
 
-def test_field_values_filter():
+def test_field_values_filter() -> None:
     with pytest.raises(TypeError):
         DemoField("x").values(False)
     with pytest.raises(TypeError):
@@ -146,7 +147,7 @@ def test_field_values_filter():
     ).build_filter() == {"last_name": {"$not_in": ("Emma", "Rachel", "Steven")}}
 
 
-def test_field_null_filter():
+def test_field_null_filter() -> None:
     result = {"employer": {"$is_null": None}}
     assert DemoField("employer").null().build_filter() == result
     assert (DemoField("employer") == None).build_filter() == result
@@ -156,8 +157,8 @@ def test_field_null_filter():
     assert (DemoField("employer") != None).build_filter() == result
 
 
-def test_field_combining():
-    class DummyFilter(BasicFilter):
+def test_field_combining() -> None:
+    class DummyFilter(BasicFilter[int]):
         operator = "$"
 
     assert (DummyFilter("a", 1) | DummyFilter("b", 2)).build_filter() == {

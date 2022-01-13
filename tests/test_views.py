@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Callable, Iterable, Optional, TypedDict
 from uuid import uuid4
 
 import pytest
@@ -6,38 +6,54 @@ import pytest
 from zucker import model
 from zucker.client import SyncClient
 from zucker.filtering import Combinator, FilterSet
+from zucker.utils import JsonMapping
+
+FakeClientDataCallback = Callable[[str, str, JsonMapping], Optional[JsonMapping]]
 
 
 class FakeClient(SyncClient):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("http://test", "u", "p")
-        self.data_callbacks = []
+        self.data_callbacks = list[FakeClientDataCallback]()
 
-    def request(self, method, url, *, params={}, **kwargs):
+    def request(
+        self,
+        method: str,
+        url: str,
+        *,
+        params: Optional[JsonMapping] = None,
+        data: Optional[JsonMapping] = None,
+        json: Optional[JsonMapping] = None,
+    ) -> JsonMapping:
+        if params is None:
+            params = {}
         for func in self.data_callbacks:
             data = func(method, url, params)
             if data is not None:
                 return data
         raise RuntimeError(f"requesting non_mocked {method} API call {url!r}")
 
-    def set_data(self, method, url, response):
-        def callback(given_method, given_url, params):
+    def set_data(self, method: str, url: str, response: JsonMapping) -> None:
+        def callback(
+            given_method: str, given_url: str, params: JsonMapping
+        ) -> Optional[JsonMapping]:
             if (method, url) == (given_method, given_url):
                 return response
+            return None
 
         self.add_data_callback(callback)
 
-    def add_data_callback(self, callback):
+    def add_data_callback(self, callback: FakeClientDataCallback) -> None:
         self.data_callbacks.append(callback)
 
 
 @pytest.fixture
-def fake_client(monkeypatch) -> FakeClient:
+def fake_client(monkeypatch: pytest.MonkeyPatch) -> FakeClient:
     client = FakeClient()
     return client
 
 
-def test_init(fake_client: FakeClient):
+def test_init(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
@@ -47,7 +63,7 @@ def test_init(fake_client: FakeClient):
         assert "filter" in str(error.value)
 
 
-def test_query_params_filters(fake_client: FakeClient):
+def test_query_params_filters(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
@@ -72,7 +88,7 @@ def test_query_params_filters(fake_client: FakeClient):
 
     class FakeFilter:
         @staticmethod
-        def build_filter() -> dict:
+        def build_filter() -> JsonMapping:
             return {
                 "$and": [
                     {"team_id": {"$in": ["45b33dd6", "e91b980c"]}},
@@ -93,7 +109,7 @@ def test_query_params_filters(fake_client: FakeClient):
     }
 
 
-def test_len(fake_client: FakeClient):
+def test_len(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
@@ -101,19 +117,22 @@ def test_len(fake_client: FakeClient):
     assert len(Demo.find()) == 43
 
 
-def test_getting_id(fake_client: FakeClient):
+def test_getting_id(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
     view = Demo.find()
     key = str(uuid4())
 
-    def callback(given_method, given_url, params):
+    def callback(
+        given_method: str, given_url: str, params: JsonMapping
+    ) -> Optional[JsonMapping]:
         if ("get", "Demo") == (given_method, given_url):
             assert params["max_num"] == 1
             assert params["fields"] == "id"
             assert params["filter[0][id][$equals]"] == key
             return {"records": [{"_module": "Demo", "id": key}]}
+        return None
 
     fake_client.add_data_callback(callback)
 
@@ -127,11 +146,11 @@ def test_getting_id(fake_client: FakeClient):
         assert "slash" in str(error.value) or "space" in str(error.value)
 
 
-def test_getting_index(fake_client: FakeClient):
+def test_getting_index(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
-    def handle(method, url, params):
+    def handle(method: str, url: str, params: JsonMapping) -> Optional[JsonMapping]:
         if (method, url) == ("get", "Demo"):
             assert params["max_num"] == 1
             assert isinstance(params["offset"], int) and params["offset"] >= 0
@@ -139,6 +158,7 @@ def test_getting_index(fake_client: FakeClient):
                 return {"records": []}
             elif params["offset"] == 8:
                 return {"records": [{"_module": "Demo", "id": "eight"}]}
+        return None
 
     fake_client.add_data_callback(handle)
     view = Demo.find()
@@ -151,11 +171,16 @@ def test_getting_index(fake_client: FakeClient):
         record = view[11]
 
 
-def test_iterating_and_slices(fake_client: FakeClient):
+class RecordDataWithId(TypedDict):
+    _module: str
+    id: str
+
+
+def test_iterating_and_slices(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
-    record_data = [
+    record_data: list[RecordDataWithId] = [
         {"_module": "Demo", "id": record_id}
         for record_id in (
             "zero",
@@ -174,7 +199,7 @@ def test_iterating_and_slices(fake_client: FakeClient):
         )
     ]
 
-    def handle(method, url, params):
+    def handle(method: str, url: str, params: JsonMapping) -> Optional[JsonMapping]:
         if (method, url) == ("get", "Demo"):
             assert isinstance(params["max_num"], int) and params["max_num"] >= 0
             assert isinstance(params["offset"], int) and params["offset"] >= 0
@@ -185,12 +210,14 @@ def test_iterating_and_slices(fake_client: FakeClient):
             }
         elif (method, url) == ("get", "Demo/count"):
             return {"record_count": len(record_data)}
+        return None
 
     fake_client.add_data_callback(handle)
     view = Demo.find()
-    view._chunk_size = 4
 
-    def check_records(records: Iterable[Demo], definitions: Iterable[dict]):
+    def check_records(
+        records: Iterable[Demo], definitions: Iterable[RecordDataWithId]
+    ) -> None:
         records = list(records)
         definitions = list(definitions)
         assert len(records) == len(definitions)

@@ -1,15 +1,24 @@
 import sys
+from typing import Any
 from unittest.mock import patch
 
 
 def test_inspection() -> None:
     @patch("zucker.SugarClient")
     class FakeClient:
-        def __init__(self, base_url: str, username: str, password: str, **kwargs):
+        def __init__(
+            self,
+            base_url: str,
+            username: str,
+            password: str,
+            *,
+            client_platform: str,
+            **kwargs: Any,
+        ):
             assert base_url == "https://server"
             assert username == "username"
             assert password == "passsword"
-            assert kwargs["client_platform"] == "theclient"
+            assert client_platform == "theclient"
 
     args = [
         sys.argv[0],

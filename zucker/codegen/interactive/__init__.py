@@ -9,7 +9,8 @@ from .inspect import run_inspect
 
 
 class PromptPasswordAction(argparse.Action):
-    def __init__(self, *args, **kwargs) -> None:
+    # argparse.Action has a bunch of keyword arguments that we don't bother typing here.
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore
         kwargs.setdefault("nargs", 0)
         super().__init__(*args, **kwargs)
 

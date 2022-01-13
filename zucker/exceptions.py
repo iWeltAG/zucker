@@ -1,3 +1,5 @@
+from typing import Any
+
 from .utils import JsonMapping
 
 
@@ -18,7 +20,7 @@ class SugarError(ZuckerException):
     code.
     """
 
-    def __init__(self, status_code: int, body: JsonMapping, *args):
+    def __init__(self, status_code: int, body: JsonMapping, *args: Any):
         assert "error_message" in body
         super(SugarError, self).__init__(body["error_message"], *args)
         self.status_code = status_code
