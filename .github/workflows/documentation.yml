@@ -14,17 +14,11 @@ jobs:
     - id: build-docs
       run: |
         nix build .#docs
-        echo "::set-output name=HTML_PATH::$(readlink -f result)"
     - if: success()
       uses: yrd/ghaction-github-pages@d57754dd075c95169e49d25d23d2c07d64de4c53
       with:
         target_branch: gh-pages
-        # Use the output from the last step as the path we want do deploy form.
-        # This variable contains the absolute path (in /nix/store) of the
-        # derivation that was built. We need that because the action doesn't
-        # like using the 'result' symlink.
-        # This is a relative path, so we need the ../../etc. to get from
-        # /home/runner/work/zucker/zucker back to /.
-        build_dir: ../../../../..${{ steps.build-docs.outputs.HTML_PATH }}
+        build_dir: result
+        follow_symlinks: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
