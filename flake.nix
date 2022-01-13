@@ -46,26 +46,39 @@
       };
       defaultPackage = packages.zucker;
 
-      checks = {
+      checks = let
+       mkCheckDerivation = definition: pkgs.stdenv.mkDerivation ({
+           inherit (packages.zucker) version src;
+           dontBuild = true;
+           doCheck = true;
+
+            installPhase = ''
+              echo "This derivation just runs tests." > $out
+            '';
+         } // definition);
+      in {
         inherit (packages) zucker;
 
         # This derivation runs the black and isort checks.
-        style = pkgs.stdenv.mkDerivation {
-          inherit (packages.zucker) version src;
+        style = mkCheckDerivation {
           pname = "zucker-style-tests";
-          dontBuild = true;
-
-          installPhase = ''
-            echo "This derivation just runs tests." > $out
-          '';
-
-          doCheck = true;
           checkInputs = with pkgs.python39Packages; [
             black isort
           ];
           checkPhase = ''
             black --check tests/ zucker/
             isort --check tests/ zucker/
+          '';
+        };
+
+        # Run mypy on the entire codebase.
+        types = mkCheckDerivation {
+          pname = "zucker-type-checks";
+          checkInputs = with pkgs.python39Packages; [
+            pytest hypothesis mypy types-requests aiohttp
+          ];
+          checkPhase = ''
+            mypy tests/ zucker/
           '';
         };
       };
