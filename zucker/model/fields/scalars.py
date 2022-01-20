@@ -40,6 +40,10 @@ class StringField(MutableScalarField[str, str]):
         """Filter for values that contain a given string."""
         return filtering.StringContainsFilter(self.name, infix)
 
+    def not_empty(self) -> filtering.NotEmptyFilter:
+        """Filter for non-empty values."""
+        return filtering.NotEmptyFilter(self.name)
+
 
 @field_for_metadata.register(metadata_attributes=dict(type="bool"), require_db=True)
 class BooleanField(MutableScalarField[bool, bool]):

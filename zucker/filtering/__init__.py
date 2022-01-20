@@ -1,6 +1,7 @@
 from .basic import (
     BasicFilter,
     NegatableFilter,
+    NotEmptyFilter,
     NullishFilter,
     NumericFilter,
     StringContainsFilter,

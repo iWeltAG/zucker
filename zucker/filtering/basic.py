@@ -160,6 +160,15 @@ class StringContainsFilter(StringFilter):
         return "$ends"
 
 
+class NotEmptyFilter(BasicFilter[None]):
+    def __init__(self, field_name: str):
+        super().__init__(field_name, None)
+
+    @property
+    def operator(self) -> str:
+        return "$not_empty"
+
+
 class NumericFilter(NegatableFilter[Number]):
     def __init__(
         self,
