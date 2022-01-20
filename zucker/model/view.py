@@ -62,15 +62,14 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         self._module = module
         self._base_endpoint = base_endpoint
         self._filter: Optional[GenericFilter] = None
-        self._range: range = range(
-            0,
-            # By just using the maximum integer size (instead of len(self)) here we skip
-            # having to fetch the view's actual size from the server before we need it,
-            # although it does mean that we need to take some extra precautions when
-            # iterating (namely calling self._validate_range()).
-            sys.maxsize,
-            1,
-        )
+
+        # The range is the current subset of indexes in the dataset that this view
+        # points to. When a sub-view is created by using the slice square brackets
+        # notation, the slice is added to a list of pending slices, which are all
+        # applied to the range when required. That way, we can defer evaluation as long
+        # as possible and are also paradigm-agnostic.
+        self._range: Optional[range] = None
+        self._pending_slices = list[slice]()
 
         # This parameter holds the total size of the view - not just that part that is
         # targeted by the range. This is fetched by calling .prefetch_size()
@@ -95,28 +94,30 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         module_name = self._module.__name__
         prefix = "filtered view" if self._filter else "view"
 
-        range_repr_parts = ["", "", ""]
-
-        if self._range.step < 0:
-            if self._range.start != sys.maxsize - 1:
-                range_repr_parts[0] = str(self._range.start)
-            if self._range.stop != -1:
-                range_repr_parts[1] = str(self._range.stop)
+        if self._range is None:
+            range_repr = ""
         else:
-            if self._range.start != 0:
-                range_repr_parts[0] = str(self._range.start)
-            if self._range.stop != sys.maxsize:
-                range_repr_parts[1] = str(self._range.stop)
-        if self._range.step != 1:
-            range_repr_parts[2] = str(self._range.step)
-        # Make sure we don't get an overhang like "1::"
-        if range_repr_parts[2] == "":
-            range_repr_parts.pop()
-        range_repr = (
-            ""
-            if all(part == "" for part in range_repr_parts)
-            else f"[{':'.join(range_repr_parts)}]"
-        )
+            range_repr_parts = ["", "", ""]
+            if self._range.step < 0:
+                if self._range.start != sys.maxsize - 1:
+                    range_repr_parts[0] = str(self._range.start)
+                if self._range.stop != -1:
+                    range_repr_parts[1] = str(self._range.stop)
+            else:
+                if self._range.start != 0:
+                    range_repr_parts[0] = str(self._range.start)
+                if self._range.stop != sys.maxsize:
+                    range_repr_parts[1] = str(self._range.stop)
+            if self._range.step != 1:
+                range_repr_parts[2] = str(self._range.step)
+            # Make sure we don't get an overhang like "1::"
+            if range_repr_parts[2] == "":
+                range_repr_parts.pop()
+            range_repr = (
+                ""
+                if all(part == "" for part in range_repr_parts)
+                else f"[{':'.join(range_repr_parts)}]"
+            )
 
         return f"<{prefix} on {module_name}{range_repr}>"
 
@@ -129,10 +130,6 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             getattr(self, attr) == getattr(other, attr)
             for attr in ("_base_endpoint", "_filter")
         )
-
-    def __len__(self) -> int:
-        self._validate_range()
-        return len(self._range)
 
     @overload
     def __getitem__(self, item: Union[UUID, str]) -> GetReturn:
@@ -176,29 +173,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
                 raise TypeError("module views only support slicing by integers")
 
             with self._clone() as view:
-                # We don't need to go and fetch the actual view size if we are only
-                # chopping off from the front. This check is pretty conservative at the
-                # moment and could be more elaborate. For example, we need to validate
-                # the range when doing the following:
-                #   [2:-3]  or  [1::-1]
-                # but with these examples that isn't really required:
-                #   [4:10]  or  [:8]
-                if (
-                    (item.start is not None and item.start < 0)
-                    or (item.stop is not None and item.stop < 0)
-                    or (item.step is not None and item.step != 1)
-                ):
-                    self._validate_range()
-
-                # The range type automatically handles sub-ranges without much of a
-                # hassle. The corresponding code is here:
-                # https://github.com/python/cpython/blob/v3.9.7/Objects/rangeobject.c#L329-L366
-                # If we were to switch to a custom implementation that keeps track of
-                # slicing views, we would probably need to do it something like the
-                # linked implementation. The whole reason we are using an actual range
-                # object to keep track of what the view is looking at is so we can do
-                # this one-liner:
-                view._range = self._range[item]
+                view._pending_slices.append(item)
 
             return view
 
@@ -211,19 +186,6 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
     ##########################
     # Extending and chaining #
     ##########################
-
-    def _validate_range(self) -> None:
-        """Make sure that the range currently set on this view has valid bounds."""
-        if self._size is None:
-            raise RuntimeError(
-                "view size is unknown - make sure .prefetch_size() has been called"
-            )
-
-        reverse = (self._range.step or 1) < 0
-        if reverse and self._range.start == sys.maxsize - 1:
-            self._range = range(self._size - 1, self._range.stop, self._range.step)
-        elif not reverse and self._range.stop == sys.maxsize:
-            self._range = range(self._range.start, self._size, self._range.step)
 
     def filtered(self: Self, *filters: Union[JsonMapping, GenericFilter]) -> Self:
         """Return a clone of this view which contains additional filters.
@@ -268,6 +230,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         view = self.__class__(self._module, self._base_endpoint)
         view._filter = self._filter
         view._range = self._range
+        view._pending_slices = self._pending_slices[:]
 
         try:
             yield view
@@ -281,6 +244,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             # Remember, the cache stores the server-side offsets so there shouldn't be
             # a problem with two views writing to the same cache object.
             view._record_cache = self._record_cache
+            view._size = self._size
 
     ###################
     # Record fetching #
@@ -372,6 +336,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         if index < 0:
             return None
         try:
+            assert isinstance(self._range, range), "view range has not been calculated"
             return self._range[index]
         except IndexError:
             return None
@@ -446,28 +411,18 @@ class SyncView(
     Generic[SyncModuleType],
     View[SyncModuleType, SyncModuleType, Optional[SyncModuleType]],
 ):
-    def _prefetch_size(self) -> None:
-        """Fetch the total number of results that can be queried from this view."""
-        data = self._module.get_client().request(
-            "get",
-            # https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.1/Integration/Web_Services/REST_API/Endpoints/modulecount_GET/
-            f"{self._base_endpoint}/count",
-            params=self._query_params,
-        )
-        record_count = data.get("record_count", None)
-        if not isinstance(record_count, int):
-            raise InvalidSugarResponseError(
-                f"invalid record count received: {record_count!r}"
-            )
-        self._size = record_count
+    #################
+    # Magic methods #
+    #################
 
-    def _validate_range(self) -> None:
-        if self._size is None:
-            self._prefetch_size()
-        super()._validate_range()
+    def __len__(self) -> int:
+        self._calculate_range()
+        assert isinstance(self._range, range)
+        return len(self._range)
 
     def __iter__(self) -> Iterator[SyncModuleType]:
-        self._validate_range()
+        self._calculate_range()
+        assert isinstance(self._range, range)
         iterator = iter(self._range)
         current_offset, next_offset = next(iterator, None), next(iterator, None)
 
@@ -490,6 +445,36 @@ class SyncView(
     def __reversed__(self) -> Iterator[SyncModuleType]:
         return iter(self[::-1])
 
+    ###################
+    # Record fetching #
+    ###################
+
+    def _fetch_size(self) -> None:
+        """Fetch the total number of results that can be queried from this view's
+        filters."""
+        data = self._module.get_client().request(
+            "get",
+            # https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.1/Integration/Web_Services/REST_API/Endpoints/modulecount_GET/
+            f"{self._base_endpoint}/count",
+            params=self._query_params,
+        )
+        record_count = data.get("record_count", None)
+        if not isinstance(record_count, int):
+            raise InvalidSugarResponseError(
+                f"got invalid record count: {record_count!r}"
+            )
+        self._size = record_count
+
+    def _calculate_range(self) -> None:
+        """Apply all pending slicing operations on the cached range object."""
+        if self._range is None:
+            if self._size is None:
+                self._fetch_size()
+            assert isinstance(self._size, int)
+            self._range = range(0, self._size, 1)
+        while len(self._pending_slices) > 0:
+            self._range = self._range[self._pending_slices.pop(0)]
+
     def get_by_id(self, key: str) -> Optional[SyncModuleType]:
         try:
             return self._prepare_get_by_id(key)[0]
@@ -507,6 +492,8 @@ class SyncView(
             return preparation
 
     def get_by_index(self, index: int) -> Optional[SyncModuleType]:
+        self._calculate_range()
+
         offset = self._index_to_offset(index)
         if offset is None:
             raise IndexError(index)
@@ -524,6 +511,44 @@ class AsyncView(
         Awaitable[Optional[AsyncModuleType]],
     ],
 ):
+    async def length(self) -> int:
+        await self._calculate_range()
+        assert isinstance(self._range, range)
+        return len(self._range)
+
+    # The following two methods are exactly the same as the the corresponding SyncView
+    # implementations, with the exception of them awaiting asynchronous methods.
+
+    async def _fetch_size(self) -> None:
+        """Fetch the total number of results that can be queried from this view's
+        filters."""
+        data = await self._module.get_client().request(
+            "get",
+            # https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.1/Integration/Web_Services/REST_API/Endpoints/modulecount_GET/
+            f"{self._base_endpoint}/count",
+            params=self._query_params,
+        )
+        record_count = data.get("record_count", None)
+        if not isinstance(record_count, int):
+            raise InvalidSugarResponseError(
+                f"got invalid record count: {record_count!r}"
+            )
+        self._size = record_count
+
+    async def _calculate_range(self) -> None:
+        """Apply all pending slicing operations on the cached range object."""
+        if self._range is None:
+            if self._size is None:
+                await self._fetch_size()
+            assert isinstance(self._size, int)
+            self._range = range(0, self._size, 1)
+        while len(self._pending_slices) > 0:
+            self._range = self._range[self._pending_slices.pop(0)]
+
+    ###################
+    # Record fetching #
+    ###################
+
     async def get_by_id(self, key: str) -> Optional[AsyncModuleType]:
         try:
             return await self._prepare_get_by_id(key)[0]

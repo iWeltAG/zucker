@@ -127,11 +127,13 @@ def test_getting_id(fake_client: FakeClient) -> None:
     def callback(
         given_method: str, given_url: str, params: JsonMapping
     ) -> Optional[JsonMapping]:
-        if ("get", "Demo") == (given_method, given_url):
+        if (given_method, given_url) == ("get", "Demo"):
             assert params["max_num"] == 1
             assert params["fields"] == "id"
             assert params["filter[0][id][$equals]"] == key
             return {"records": [{"_module": "Demo", "id": key}]}
+        if (given_method, given_url) == ("get", "Demo/count"):
+            return {"record_count": 12}
         return None
 
     fake_client.add_data_callback(callback)
@@ -158,6 +160,8 @@ def test_getting_index(fake_client: FakeClient) -> None:
                 return {"records": []}
             elif params["offset"] == 8:
                 return {"records": [{"_module": "Demo", "id": "eight"}]}
+        if (method, url) == ("get", "Demo/count"):
+            return {"record_count": 12}
         return None
 
     fake_client.add_data_callback(handle)
