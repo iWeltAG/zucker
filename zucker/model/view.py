@@ -343,6 +343,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
 
     def _offset_to_index(self, offset: int) -> Optional[int]:
         try:
+            assert isinstance(self._range, range), "view range has not been calculated"
             return self._range.index(offset)
         except ValueError:
             return None

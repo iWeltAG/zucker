@@ -396,7 +396,7 @@ class AsyncClient(BaseClient):
             )
             self._finalize_authentication(auth_job_name, response_code, response_json)
 
-        response_code, response_json = self.raw_request(
+        response_code, response_json = await self.raw_request(
             method, endpoint, params=params, data=data, json=json
         )
         return self._finalize_request(response_code, response_json)
