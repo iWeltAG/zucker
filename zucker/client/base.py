@@ -15,7 +15,12 @@ from typing import (
     Union,
 )
 
-from zucker.exceptions import InvalidSugarResponseError, UnfetchedMetadataError
+from zucker.exceptions import (
+    InvalidSugarResponseError,
+    SugarError,
+    UnfetchedMetadataError,
+    ZuckerException,
+)
 from zucker.utils import JsonMapping, MutableJsonMapping, check_json_mapping
 
 if TYPE_CHECKING:
@@ -204,29 +209,36 @@ class BaseClient(abc.ABC):
                 },
             )
 
-    def _finalize_authentication(self, data: Any) -> None:
+    def _finalize_authentication(
+        self, auth_job_name: str, response_code: int, data: Any
+    ) -> None:
         """Process the result from the authentication call and save the required
         tokens."""
-        response = check_json_mapping(data)
-
-        if (
-            "access_token" not in response
-            or "refresh_token" not in response
-            or "expires_in" not in response
-        ):
-            raise InvalidSugarResponseError(
-                "missing response fields from authentication result"
+        if not (200 <= response_code < 300):
+            raise ZuckerException(
+                f"{auth_job_name} failed with status code {response_code}"
             )
 
-        access_token = response["access_token"]
-        refresh_token = response["refresh_token"]
+        response_json = check_json_mapping(data)
+
+        if (
+            "access_token" not in response_json
+            or "refresh_token" not in response_json
+            or "expires_in" not in response_json
+        ):
+            raise InvalidSugarResponseError(
+                "missing response_json fields from authentication result"
+            )
+
+        access_token = response_json["access_token"]
+        refresh_token = response_json["refresh_token"]
         if not isinstance(access_token, str) or not isinstance(refresh_token, str):
             raise InvalidSugarResponseError(
                 f"bad authentication data: expected token strings, got "
                 f"{type(access_token)!r} and {type(refresh_token)!r}"
             )
 
-        expires_in = response["expires_in"]
+        expires_in = response_json["expires_in"]
         if not isinstance(expires_in, (int, float)):
             raise InvalidSugarResponseError(
                 f"bad authentication data: expected exipry timestamp as a number, got "
@@ -236,14 +248,18 @@ class BaseClient(abc.ABC):
 
         self._authentication = (True, access_token, refresh_token, expire_timestamp)
 
-    def _finalize_request(self, data: Any) -> JsonMapping:
+    def _finalize_request(self, response_code: int, data: Any) -> JsonMapping:
         """Process the response from an API request and return a type-checked
         ``JsonMapping`` type.
         """
         try:
-            return check_json_mapping(data)
+            response_json = check_json_mapping(data)
         except TypeError:
             raise InvalidSugarResponseError("got invalid JSON response from Sugar")
+        if 200 <= response_code < 300:
+            return response_json
+        else:
+            raise SugarError(response_code, response_json)
 
     @abc.abstractmethod
     def close(self) -> Union[None, Awaitable[None]]:
@@ -285,6 +301,23 @@ class SyncClient(BaseClient, abc.ABC):
         pass
 
     @abc.abstractmethod
+    def raw_request(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        params: Optional[JsonMapping] = None,
+        data: Optional[JsonMapping] = None,
+        json: Optional[JsonMapping] = None,
+    ) -> tuple[int, JsonMapping]:
+        """Request handling method that should be overridden by client implementations.
+
+        This takes the same parameters as :meth:`BaseClient.request`.
+
+        :returns: A tuple containing the response's status code and the JSON object
+            gotten from the API.
+        """
+
     def request(
         self,
         method: str,
@@ -294,7 +327,21 @@ class SyncClient(BaseClient, abc.ABC):
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
     ) -> JsonMapping:
-        ...
+        auth_payload = self._prepare_authentication()
+
+        if auth_payload is not None:
+            auth_job_name, auth_endpoint, auth_data = auth_payload
+            response_code, response_json = self.raw_request(
+                "post",
+                auth_endpoint,
+                data=auth_data,
+            )
+            self._finalize_authentication(auth_job_name, response_code, response_json)
+
+        response_code, response_json = self.raw_request(
+            method, endpoint, params=params, data=data, json=json
+        )
+        return self._finalize_request(response_code, response_json)
 
     def fetch_metadata(self, *types: str) -> None:
         """Make sure server metadata for the given set of types is available."""
@@ -312,6 +359,23 @@ class AsyncClient(BaseClient):
         pass
 
     @abc.abstractmethod
+    async def raw_request(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        params: Optional[JsonMapping] = None,
+        data: Optional[JsonMapping] = None,
+        json: Optional[JsonMapping] = None,
+    ) -> tuple[int, JsonMapping]:
+        """Request handling method that should be overridden by client implementations.
+
+        This takes the same parameters as :meth:`BaseClient.request`.
+
+        :returns: A tuple containing the response's status code and the JSON object
+            gotten from the API.
+        """
+
     async def request(
         self,
         method: str,
@@ -321,7 +385,21 @@ class AsyncClient(BaseClient):
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
     ) -> JsonMapping:
-        ...
+        auth_payload = self._prepare_authentication()
+
+        if auth_payload is not None:
+            auth_job_name, auth_endpoint, auth_data = auth_payload
+            response_code, response_json = await self.raw_request(
+                "post",
+                auth_endpoint,
+                data=auth_data,
+            )
+            self._finalize_authentication(auth_job_name, response_code, response_json)
+
+        response_code, response_json = self.raw_request(
+            method, endpoint, params=params, data=data, json=json
+        )
+        return self._finalize_request(response_code, response_json)
 
     async def fetch_metadata(self, *types: str) -> None:
         """Make sure server metadata for the given set of types is available."""

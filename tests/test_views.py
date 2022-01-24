@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Optional, TypedDict
+from typing import Any, Callable, Iterable, Optional, TypedDict
 from uuid import uuid4
 
 import pytest
@@ -32,6 +32,9 @@ class FakeClient(SyncClient):
             if data is not None:
                 return data
         raise RuntimeError(f"requesting non_mocked {method} API call {url!r}")
+
+    def raw_request(self, *args: Any, **kwargs: Any) -> tuple[int, JsonMapping]:
+        raise RuntimeError("using non-mocked raw_request method")
 
     def set_data(self, method: str, url: str, response: JsonMapping) -> None:
         def callback(

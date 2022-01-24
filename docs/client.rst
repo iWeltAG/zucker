@@ -147,7 +147,7 @@ Zucker currently bundles two client implementations:
 .. autoclass:: zucker.RequestsClient
 
 ``AioClient`` (asynchronous)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: zucker.AioClient
 
@@ -156,7 +156,7 @@ Implementing your own client
 
 If you are already using an HTTP library that isn't supported by Zucker yet,
 you can write your own client. This isn't much work — you basically only need
-to implement the :meth:`request` method. Choose one of
+to implement the :meth:`raw_request` method. Choose one of
 :class:`~zucker.client.base.SyncClient` or
 :class:`~zucker.client.base.AsyncClient` as the base class. As a reference, have
 a look at the provided client implementations — they also inherit from the two
@@ -165,17 +165,3 @@ aforementioned base classes.
 .. autoclass:: zucker.client.base.SyncClient
 
 .. autoclass:: zucker.client.base.AsyncClient
-
-Helper methods
-~~~~~~~~~~~~~~
-
-A lot of shared functionality is extracted into these helper methods. While
-implementing a client, you can treat them as a black box so the codebase can be
-kept clean:
-
-.. automethod:: zucker.client.base.BaseClient._prepare_authentication
-.. automethod:: zucker.client.base.BaseClient._finalize_authentication
-.. automethod:: zucker.client.base.BaseClient._finalize_request
-
-Again, see the implementations of :class:`~zucker.RequestsClient` and
-:class:`~zucker.AioClient` for examples.
