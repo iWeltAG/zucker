@@ -1,7 +1,6 @@
-from typing import Callable, Optional
+from typing import Mapping, Optional
 
-from zucker.exceptions import SugarError, ZuckerException
-from zucker.utils import JsonMapping
+from zucker.utils import JsonMapping, JsonType
 
 from .base import SyncClient
 
@@ -37,10 +36,10 @@ class RequestsClient(SyncClient):
         method: str,
         endpoint: str,
         *,
-        params: Optional[JsonMapping] = None,
+        params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonMapping]:
+    ) -> tuple[int, JsonType]:
         response = self._session.request(
             method,
             f"{self.base_url}/rest/v11_5/{endpoint}",

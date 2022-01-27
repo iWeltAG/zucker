@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Mapping, Optional
 
-from zucker.exceptions import SugarError, ZuckerException
-from zucker.utils import JsonMapping
+from zucker.utils import JsonMapping, JsonType
 
 from .base import AsyncClient
 
@@ -43,10 +42,10 @@ class AioClient(AsyncClient):
         method: str,
         endpoint: str,
         *,
-        params: Optional[JsonMapping] = None,
+        params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonMapping]:
+    ) -> tuple[int, JsonType]:
         import aiohttp
 
         if self._session is None:

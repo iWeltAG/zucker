@@ -262,7 +262,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
 
     def _prepare_get_by_offset(
         self, offset: int
-    ) -> Union[ModuleType, Tuple[str, str, JsonMapping]]:
+    ) -> Union[ModuleType, Tuple[str, str, Mapping[str, str]]]:
         if (cache_entry := self._record_cache.get(offset, None)) is not None:
             return cache_entry
 
@@ -271,8 +271,8 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             # https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.1/Integration/Web_Services/REST_API/Endpoints/module_GET/
             f"{self._base_endpoint}",
             dict(
-                max_num=1,
-                offset=offset,
+                max_num="1",
+                offset=str(offset),
                 **self._query_params,
             ),
         )
@@ -349,14 +349,14 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             return None
 
     @cached_property
-    def _query_params(self) -> JsonMapping:
+    def _query_params(self) -> Mapping[str, str]:
         return {
             "fields": ",".join(self._module.field_names()),
             **self._filter_query_params,
         }
 
     @property
-    def _filter_query_params(self) -> JsonMapping:
+    def _filter_query_params(self) -> Mapping[str, str]:
         """Render out the current filter into query parameters.
 
         This method will convert a filter that renders out to something like this:
@@ -381,13 +381,13 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         if self._filter is None:
             return {}
 
-        params = {}
+        params = dict[str, str]()
 
         def parse_filter(prefix: str, filter_definition: JsonType) -> None:
             """Recursively parse a filter definition and add the appropriate parameters
             to the result object."""
             if isinstance(filter_definition, (str, int, float, bool)):
-                params["filter{}".format(prefix)] = filter_definition
+                params["filter{}".format(prefix)] = str(filter_definition)
                 return
 
             iterator: Iterable[tuple[str, JsonType]]
@@ -528,7 +528,9 @@ class AsyncView(
             # https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.1/Integration/Web_Services/REST_API/Endpoints/modulecount_GET/
             f"{self._base_endpoint}/count",
             params=self._query_params,
+            allow_bulk=False,
         )
+        print(" === GOT IT")
         record_count = data.get("record_count", None)
         if not isinstance(record_count, int):
             raise InvalidSugarResponseError(
@@ -569,6 +571,7 @@ class AsyncView(
             return preparation
 
     async def get_by_index(self, index: int) -> Optional[AsyncModuleType]:
+        await self._calculate_range()
         offset = self._index_to_offset(index)
         if offset is None:
             return None

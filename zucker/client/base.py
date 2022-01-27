@@ -1,17 +1,23 @@
 from __future__ import annotations
 
 import abc
+import asyncio
+import urllib.parse
 from datetime import datetime, timedelta
+from json import dumps as dump_json
 from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
+    Callable,
     Iterator,
     Literal,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -21,10 +27,18 @@ from zucker.exceptions import (
     UnfetchedMetadataError,
     ZuckerException,
 )
-from zucker.utils import JsonMapping, MutableJsonMapping, check_json_mapping
+from zucker.utils import (
+    JsonMapping,
+    JsonType,
+    MutableJsonMapping,
+    check_json,
+    check_json_mapping,
+)
 
 if TYPE_CHECKING:
     from zucker.model.module import AsyncModule, BoundModule, SyncModule  # noqa: F401
+
+_T = TypeVar("_T")
 
 
 class BaseClient(abc.ABC):
@@ -253,7 +267,7 @@ class BaseClient(abc.ABC):
         ``JsonMapping`` type.
         """
         try:
-            response_json = check_json_mapping(data)
+            response_json = check_json(data)
         except TypeError:
             raise InvalidSugarResponseError("got invalid JSON response from Sugar")
         if 200 <= response_code < 300:
@@ -277,7 +291,7 @@ class BaseClient(abc.ABC):
         method: str,
         endpoint: str,
         *,
-        params: Optional[JsonMapping] = None,
+        params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
     ) -> Union[JsonMapping, Awaitable[JsonMapping]]:
@@ -306,7 +320,7 @@ class SyncClient(BaseClient, abc.ABC):
         method: str,
         endpoint: str,
         *,
-        params: Optional[JsonMapping] = None,
+        params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
     ) -> tuple[int, JsonMapping]:
@@ -323,7 +337,7 @@ class SyncClient(BaseClient, abc.ABC):
         method: str,
         endpoint: str,
         *,
-        params: Optional[JsonMapping] = None,
+        params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
     ) -> JsonMapping:
@@ -355,6 +369,27 @@ class SyncClient(BaseClient, abc.ABC):
 
 
 class AsyncClient(BaseClient):
+    def __init__(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        *,
+        client_platform: str = "zucker",
+        verify_ssl: bool = True,
+    ):
+        super().__init__(
+            base_url,
+            username,
+            password,
+            client_platform=client_platform,
+            verify_ssl=verify_ssl,
+        )
+
+        self._handle_bulk: Optional[
+            Callable[[JsonMapping], Awaitable[JsonMapping]]
+        ] = None
+
     async def close(self) -> None:
         pass
 
@@ -364,10 +399,10 @@ class AsyncClient(BaseClient):
         method: str,
         endpoint: str,
         *,
-        params: Optional[JsonMapping] = None,
+        params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonMapping]:
+    ) -> tuple[int, JsonType]:
         """Request handling method that should be overridden by client implementations.
 
         This takes the same parameters as :meth:`BaseClient.request`.
@@ -376,15 +411,7 @@ class AsyncClient(BaseClient):
             gotten from the API.
         """
 
-    async def request(
-        self,
-        method: str,
-        endpoint: str,
-        *,
-        params: Optional[JsonMapping] = None,
-        data: Optional[JsonMapping] = None,
-        json: Optional[JsonMapping] = None,
-    ) -> JsonMapping:
+    async def _ensure_authentication(self) -> None:
         auth_payload = self._prepare_authentication()
 
         if auth_payload is not None:
@@ -396,10 +423,163 @@ class AsyncClient(BaseClient):
             )
             self._finalize_authentication(auth_job_name, response_code, response_json)
 
-        response_code, response_json = await self.raw_request(
-            method, endpoint, params=params, data=data, json=json
-        )
+    async def request(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        params: Optional[Mapping[str, str]] = None,
+        data: Optional[JsonMapping] = None,
+        json: Optional[JsonMapping] = None,
+        allow_bulk: bool = True,
+    ) -> JsonMapping:
+        response_code: int
+        response_json: JsonMapping
+
+        if self._handle_bulk is not None and allow_bulk:
+            # Important: when making changes, make sure to not await anything in this
+            # branch except the final self._handle bulk so we don't get any race
+            # conditions (we don't assume thread-safety, however).
+
+            if data is not None:
+                raise RuntimeError(
+                    "data argument for requests is not supported in bulk contexts"
+                )
+
+            url = f"/v11_5/{endpoint}"
+            if params is not None:
+                url += "?"
+                url += "&".join(
+                    f"{urllib.parse.quote_plus(key)}={urllib.parse.quote_plus(value)}"
+                    for key, value in params.items()
+                )
+            request_definition = dict(url=url, method=method.upper())
+            if json is not None:
+                request_definition["data"] = dump_json(json)
+
+            response_code, response_json = await self._handle_bulk(request_definition)
+        else:
+            await self._ensure_authentication()
+
+            response_code, response_json = await self.raw_request(
+                method, endpoint, params=params, data=data, json=json
+            )
+
         return self._finalize_request(response_code, response_json)
+
+    async def bulk(self, *actions: Awaitable[Any]) -> tuple[Any, ...]:
+        """Run a sequence of actions that require server communication together.
+
+        This will use Sugar's `Bulk API`_ to batch all actions together and send them
+        as a single HTTP request. It works similarly to :func:`asyncio.gather` in that
+        this method will resolve once the result for all provided awaitables is
+        available and return them as a tuple.
+
+        Do not use this is threaded environments -- the implementation is not
+        thread-safe.
+
+        .. _Bulk API: https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.3/Integration/Web_Services/REST_API/Endpoints/bulk_POST/
+        """
+        counting_lock = asyncio.Lock()
+        counting_event = asyncio.Event()
+        running_count = 0
+        waiting_count = 0
+        finished_count = 0
+
+        done_event = asyncio.Event()
+        request_definitions = list[JsonMapping]()
+        responses = list[tuple[int, JsonMapping]]()
+
+        async def handle_bulk(
+            request_definition: JsonMapping,
+        ) -> tuple[int, JsonMapping]:
+            nonlocal waiting_count
+
+            request_definitions.append(request_definition)
+            # This shouldn't create any race conditions because we are not targeting
+            # thread safety:
+            request_index = len(request_definitions) - 1
+
+            async with counting_lock:
+                waiting_count += 1
+                counting_event.set()
+            await done_event.wait()
+            async with counting_lock:
+                waiting_count -= 1
+                counting_event.set()
+
+            return responses[request_index]
+
+        async def wrap_action(action: Awaitable[_T]) -> _T:
+            """Wrap one of the actions in another coroutine. This is done so that when
+            an action is passed that doesn't actually use the server we don't end up
+            waiting indefinitely."""
+            nonlocal running_count, finished_count
+
+            async with counting_lock:
+                running_count += 1
+                counting_event.set()
+            try:
+                return await action
+            finally:
+                async with counting_lock:
+                    running_count -= 1
+                    finished_count += 1
+                    counting_event.set()
+
+        self._handle_bulk = handle_bulk
+        action_tasks = [asyncio.create_task(wrap_action(action)) for action in actions]
+
+        # Wait until all the tasks are actually started.
+        while running_count + finished_count != len(actions):
+            await counting_event.wait()
+            counting_event.clear()
+
+        while True:
+            if finished_count == len(actions):
+                return await asyncio.gather(*action_tasks)
+
+            # Wait until all tasks have either completed (for those that don't actually
+            # use the server) or are waiting for the actual server request to start (and
+            # have therefore registered themselves in the request_definitions list).
+            if running_count == waiting_count:
+                break
+
+            # print("counting_event.wait", running_count, waiting_count, finished_count)
+            await counting_event.wait()
+            counting_event.clear()
+
+        await self._ensure_authentication()
+
+        response_code, response_json = await self.raw_request(
+            "post", "/bulk", json=dict(requests=request_definitions)
+        )
+        if not isinstance(response_json, Sequence):
+            raise InvalidSugarResponseError(
+                f"expected list from bulk API, got {type(response_json)!r}"
+            )
+
+        # Extract the individual requests' results out of the combined response.
+        for item in response_json:
+            if not isinstance(item, Mapping):
+                raise InvalidSugarResponseError(
+                    f"expected dictionary in bulk API list, got {type(item)!r}"
+                )
+            if (
+                "contents" not in item
+                or not isinstance(item["contents"], Mapping)
+                or "status" not in item
+                or not isinstance(item["status"], int)
+            ):
+                raise InvalidSugarResponseError(
+                    "got invalid dictionary layout from bulk API"
+                )
+            check_json_mapping(item["contents"])
+            responses.append((item["status"], item["contents"]))
+
+        done_event.set()
+
+        return await asyncio.gather(*action_tasks)
 
     async def fetch_metadata(self, *types: str) -> None:
         """Make sure server metadata for the given set of types is available."""
