@@ -480,104 +480,116 @@ class AsyncClient(BaseClient):
 
         .. _Bulk API: https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.3/Integration/Web_Services/REST_API/Endpoints/bulk_POST/
         """
-        counting_lock = asyncio.Lock()
-        counting_event = asyncio.Event()
-        running_count = 0
-        waiting_count = 0
-        finished_count = 0
+        # These dictionaries store the prepared requests that should be sent. Each
+        # definition contains a JSON object in the form accepted by the bulk Sugar API
+        # (see the link in this method's docstring). Every request that gets started
+        # gets a unique key (an int). Next to the definition, we also store an Event
+        # that will get set once a response is available. The first dictionary here will
+        # hold all requests that are currently waiting to be processed. The second
+        # contains responses for those requests where a /bulk call has returned data.
+        next_key = 0
+        request_definitions = dict[int, (JsonMapping, asyncio.Event)]()
+        responses = dict[int, tuple[int, JsonMapping]]()
 
-        done_event = asyncio.Event()
-        request_definitions = list[JsonMapping]()
-        responses = list[tuple[int, JsonMapping]]()
+        # This event will be set whenever the number of waiting requests change.
+        counting_event = asyncio.Event()
 
         async def handle_bulk(
             request_definition: JsonMapping,
         ) -> tuple[int, JsonMapping]:
-            nonlocal waiting_count
+            """Callback for handling bulk requests. This is called from the actual
+            request() method and will queue the request, wait for the corresponding
+            batch is done and then return the result."""
+            nonlocal next_key
 
-            request_definitions.append(request_definition)
+            request_event = asyncio.Event()
+
             # This shouldn't create any race conditions because we are not targeting
-            # thread safety:
-            request_index = len(request_definitions) - 1
+            # thread safety (same goes for the counting stuff further down):
+            request_key = next_key
+            next_key += 1
+            request_definitions[request_key] = request_definition, request_event
+            counting_event.set()
 
-            async with counting_lock:
-                waiting_count += 1
-                counting_event.set()
-            await done_event.wait()
-            async with counting_lock:
-                waiting_count -= 1
-                counting_event.set()
+            await request_event.wait()
 
-            return responses[request_index]
-
-        async def wrap_action(action: Awaitable[_T]) -> _T:
-            """Wrap one of the actions in another coroutine. This is done so that when
-            an action is passed that doesn't actually use the server we don't end up
-            waiting indefinitely."""
-            nonlocal running_count, finished_count
-
-            async with counting_lock:
-                running_count += 1
-                counting_event.set()
             try:
-                return await action
+                return responses.pop(request_key)
             finally:
-                async with counting_lock:
-                    running_count -= 1
-                    finished_count += 1
-                    counting_event.set()
+                counting_event.set()
 
         self._handle_bulk = handle_bulk
-        action_tasks = [asyncio.create_task(wrap_action(action)) for action in actions]
+        action_tasks = [asyncio.create_task(action) for action in actions]
+        for task in action_tasks:
+            task.add_done_callback(lambda *_: counting_event.set())
 
-        # Wait until all the tasks are actually started.
-        while running_count + finished_count != len(actions):
-            await counting_event.wait()
-            counting_event.clear()
-
-        while True:
-            if finished_count == len(actions):
-                return await asyncio.gather(*action_tasks)
-
+        # This loop will run as long as at least on action hasn't returned yet and
+        # therefore may still be waiting on a request. Further, that action may even
+        # perform more requests after that. We handle that case by sending requests
+        # off in batches - one in each round of this loop.
+        while (
+            done_task_count := sum(1 for task in action_tasks if task.done())
+        ) != len(actions):
             # Wait until all tasks have either completed (for those that don't actually
             # use the server) or are waiting for the actual server request to start (and
-            # have therefore registered themselves in the request_definitions list).
-            if running_count == waiting_count:
-                break
+            # have therefore registered themselves in the request_definitions list). In
+            # most calls, the latter will probably be the case, but we want to block
+            # this method when a completely unrelated awaitable gets passed.
+            if len(request_definitions) < len(actions) - done_task_count:
+                await counting_event.wait()
+                counting_event.clear()
+                continue
 
-            # print("counting_event.wait", running_count, waiting_count, finished_count)
-            await counting_event.wait()
-            counting_event.clear()
+            # Now, we are in a state where every remaining (as in: not done) task is
+            # waiting for a request to complete. That means we can now collect them from
+            # the definitions dictionary, run them all through the /bulk API endpoint
+            # and split the results back up:
 
-        await self._ensure_authentication()
+            await self._ensure_authentication()
 
-        response_code, response_json = await self.raw_request(
-            "post", "/bulk", json=dict(requests=request_definitions)
-        )
-        if not isinstance(response_json, Sequence):
-            raise InvalidSugarResponseError(
-                f"expected list from bulk API, got {type(response_json)!r}"
+            request_keys = list(request_definitions.keys())
+            request_events: list[asyncio.Event] = [
+                request_definitions[key][1] for key in request_keys
+            ]
+            response_code, response_json = await self.raw_request(
+                "post",
+                "/bulk",
+                json=dict(
+                    requests=[request_definitions[key][0] for key in request_keys]
+                ),
             )
-
-        # Extract the individual requests' results out of the combined response.
-        for item in response_json:
-            if not isinstance(item, Mapping):
+            request_definitions.clear()
+            if not isinstance(response_json, Sequence):
                 raise InvalidSugarResponseError(
-                    f"expected dictionary in bulk API list, got {type(item)!r}"
+                    f"expected list from bulk API, got {type(response_json)!r}"
                 )
-            if (
-                "contents" not in item
-                or not isinstance(item["contents"], Mapping)
-                or "status" not in item
-                or not isinstance(item["status"], int)
-            ):
+            if not len(response_json) == len(request_keys):
                 raise InvalidSugarResponseError(
-                    "got invalid dictionary layout from bulk API"
+                    f"expected list of length {len(request_keys)} from bulk API, got "
+                    f"length {len(response_json)}"
                 )
-            check_json_mapping(item["contents"])
-            responses.append((item["status"], item["contents"]))
 
-        done_event.set()
+            for key, item in zip(request_keys, response_json):
+                if not isinstance(item, Mapping):
+                    raise InvalidSugarResponseError(
+                        f"expected dictionary in bulk API list, got {type(item)!r}"
+                    )
+                if (
+                    "contents" not in item
+                    or not isinstance(item["contents"], Mapping)
+                    or "status" not in item
+                    or not isinstance(item["status"], int)
+                ):
+                    raise InvalidSugarResponseError(
+                        "got invalid dictionary layout from bulk API"
+                    )
+                check_json_mapping(item["contents"])
+                responses[key] = (item["status"], item["contents"])
+
+            # When these events are set, handle_bulk() will pick it up and take the
+            # correct response out of the 'responses' dictionary:
+            for event in request_events:
+                event.set()
 
         return await asyncio.gather(*action_tasks)
 

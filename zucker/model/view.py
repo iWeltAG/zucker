@@ -528,9 +528,7 @@ class AsyncView(
             # https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.1/Integration/Web_Services/REST_API/Endpoints/modulecount_GET/
             f"{self._base_endpoint}/count",
             params=self._query_params,
-            allow_bulk=False,
         )
-        print(" === GOT IT")
         record_count = data.get("record_count", None)
         if not isinstance(record_count, int):
             raise InvalidSugarResponseError(
