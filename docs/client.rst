@@ -136,6 +136,30 @@ if you need to check for that case:
 
 .. autoproperty:: zucker.client.base.BaseClient.authenticated
 
+Bulking
+~~~~~~~
+
+Asynchronous client implementations support batching together arbitrary requests
+into a single HTTP call:
+
+.. automethod:: zucker.client.base.AsyncClient.bulk
+
+  Here is an example usage:
+
+  .. code-block:: python
+
+      first_record, _, last_record = await crm.bulk(
+        MyModel.find()[0],
+        some_record.delete(),
+        MyModel.find()[-1]
+      )
+
+  .. note::
+    Due to shortcomings of the Python typing system, this method will only yield
+    the correct types for up to 6 arguments. Bulking more actions will work, but
+    the returned type will be ``Any``. In that case, you will need to use
+    :func:`typing.cast` to force the correct types.
+
 Bundled clients
 ---------------
 

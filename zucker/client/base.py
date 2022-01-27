@@ -530,13 +530,20 @@ class AsyncClient(BaseClient):
     ) -> tuple[_T1, _T2, _T3, _T4, _T5, _T6]:
         ...
 
+    @overload
+    async def bulk(self, *actions: Awaitable[Any]) -> tuple[Any, ...]:
+        ...
+
     async def bulk(self, *actions: Awaitable[Any]) -> tuple[Any, ...]:
         """Run a sequence of actions that require server communication together.
 
         This will use Sugar's `Bulk API`_ to batch all actions together and send them
         as a single HTTP request. It works similarly to :func:`asyncio.gather` in that
         this method will resolve once the result for all provided awaitables is
-        available and return them as a tuple.
+        available and return them as a tuple. You can also use this method to gather
+        together multiple awaitables where only one of them uses the server. If an
+        action doesn't resolve after the first request (for example because it needs a
+        second one), a second batch will be started.
 
         Do not use this is threaded environments -- the implementation is not
         thread-safe.
