@@ -18,7 +18,7 @@
           # Release tools
           build twine
           # Testing, linting, formatting and type checking
-          pytest pytest-cov hypothesis
+          pytest pytest-asyncio pytest-cov hypothesis
           mypy types-requests
           black isort
           # Documentation
@@ -75,7 +75,7 @@
         types = mkCheckDerivation {
           pname = "zucker-type-checks";
           checkInputs = with pkgs.python39Packages; [
-            pytest hypothesis mypy types-requests aiohttp
+            pytest pytest-asyncio hypothesis mypy types-requests aiohttp
           ];
           checkPhase = ''
             mypy tests/ zucker/

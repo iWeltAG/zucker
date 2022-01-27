@@ -1,30 +1,46 @@
 import os
 from datetime import timedelta
+from typing import cast
 
 import pytest
 from hypothesis import Phase, given, settings
 from hypothesis import strategies as st
 
-from zucker import RequestsClient, model
-from zucker.client import SyncClient
+from zucker import AioClient, RequestsClient, model
+from zucker.client import AsyncClient, SyncClient
 
 
-@pytest.fixture(scope="module")
-def live_client() -> SyncClient:
+def get_credentials() -> tuple[str, str, str, str]:
     if "ZUCKER_TEST_CREDENTIALS" not in os.environ:
         pytest.skip("test server credentials not configured")
 
-    credentials = os.environ["ZUCKER_TEST_CREDENTIALS"].split("|")
+    credentials = tuple(os.environ["ZUCKER_TEST_CREDENTIALS"].split("|"))
     assert len(credentials) == 4, "invalid format for test server credentials"
+    return cast("tuple[str, str, str, str]", credentials)
 
-    client = RequestsClient(
+
+@pytest.fixture(scope="module")
+def live_sync_client() -> SyncClient:
+    credentials = get_credentials()
+    return RequestsClient(
         base_url=credentials[0],
         username=credentials[1],
         password=credentials[2],
         client_platform=credentials[3],
         verify_ssl=False,
     )
-    return client
+
+
+@pytest.fixture(scope="module")
+def live_async_client() -> AsyncClient:
+    credentials = get_credentials()
+    return AioClient(
+        base_url=credentials[0],
+        username=credentials[1],
+        password=credentials[2],
+        client_platform=credentials[3],
+        verify_ssl=False,
+    )
 
 
 @st.composite
@@ -51,7 +67,7 @@ class BaseLead(model.UnboundModule):
 )
 @given(names(), names(), st.text(min_size=10))
 def test_crud(
-    live_client: SyncClient, first_name: str, last_name: str, description: str
+    live_sync_client: SyncClient, first_name: str, last_name: str, description: str
 ) -> None:
     """This test runs a complete workflow for working with records.
 
@@ -68,7 +84,7 @@ def test_crud(
     skipped all together.
     """
 
-    class Lead(model.SyncModule, BaseLead, client=live_client, api_name="Leads"):
+    class Lead(model.SyncModule, BaseLead, client=live_sync_client, api_name="Leads"):
         pass
 
     lead_1 = Lead(first_name=first_name, last_name=last_name)
@@ -95,3 +111,25 @@ def test_crud(
 
     lead_1.delete()
     assert len(Lead.find(Lead.id == lead_id)) == 0
+
+
+async def test_bulk(live_async_client: AsyncClient) -> None:
+    crm = live_async_client
+
+    class Lead(model.AsyncModule, BaseLead, client=crm, api_name="Leads"):
+        pass
+
+    lead_a: Lead
+    lead_b: Lead
+    lead_c: Lead
+
+    lead_a, lead_b, lead_c = await crm.bulk(
+        Lead.find()[0],
+        Lead.find()[1],
+        Lead.find()[-1],
+    )
+
+    assert isinstance(lead_a, Lead)
+    assert isinstance(lead_b, Lead)
+    assert isinstance(lead_c, Lead)
+    assert lead_a.id != lead_b.id and lead_b.id != lead_c.id and lead_c.id != lead_a.id
