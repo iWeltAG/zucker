@@ -108,7 +108,7 @@ def test_query_params_filters(fake_client: FakeClient) -> None:
         "filter[0][$and][0][team_id][$in][0]": "45b33dd6",
         "filter[0][$and][0][team_id][$in][1]": "e91b980c",
         "filter[0][$and][1][$or][0][color]": "yellow",
-        "filter[0][$and][1][$or][1][age]": 4,
+        "filter[0][$and][1][$or][1][age]": "4",
     }
 
 
@@ -131,7 +131,7 @@ def test_getting_id(fake_client: FakeClient) -> None:
         given_method: str, given_url: str, params: JsonMapping
     ) -> Optional[JsonMapping]:
         if (given_method, given_url) == ("get", "Demo"):
-            assert params["max_num"] == 1
+            assert params["max_num"] == "1"
             assert params["fields"] == "id"
             assert params["filter[0][id][$equals]"] == key
             return {"records": [{"_module": "Demo", "id": key}]}
@@ -157,11 +157,13 @@ def test_getting_index(fake_client: FakeClient) -> None:
 
     def handle(method: str, url: str, params: JsonMapping) -> Optional[JsonMapping]:
         if (method, url) == ("get", "Demo"):
-            assert params["max_num"] == 1
-            assert isinstance(params["offset"], int) and params["offset"] >= 0
-            if params["offset"] > 10:
+            assert params["max_num"] == "1"
+            assert isinstance(params["offset"], str) and len(params["offset"]) > 0
+            offset = int(params["offset"])
+            assert offset >= 0
+            if offset > 10:
                 return {"records": []}
-            elif params["offset"] == 8:
+            elif offset == 8:
                 return {"records": [{"_module": "Demo", "id": "eight"}]}
         if (method, url) == ("get", "Demo/count"):
             return {"record_count": 12}
@@ -208,13 +210,15 @@ def test_iterating_and_slices(fake_client: FakeClient) -> None:
 
     def handle(method: str, url: str, params: JsonMapping) -> Optional[JsonMapping]:
         if (method, url) == ("get", "Demo"):
-            assert isinstance(params["max_num"], int) and params["max_num"] >= 0
-            assert isinstance(params["offset"], int) and params["offset"] >= 0
-            return {
-                "records": record_data[
-                    params["offset"] : params["offset"] + params["max_num"]
-                ]
-            }
+            assert isinstance(params["max_num"], str) and len(params["max_num"]) > 0
+            max_num = int(params["max_num"])
+            assert max_num >= 0
+
+            assert isinstance(params["offset"], str) and len(params["offset"]) > 0
+            offset = int(params["offset"])
+            assert offset >= 0
+
+            return {"records": record_data[offset : offset + max_num]}
         elif (method, url) == ("get", "Demo/count"):
             return {"record_count": len(record_data)}
         return None

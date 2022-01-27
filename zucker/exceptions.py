@@ -20,9 +20,12 @@ class SugarError(ZuckerException):
     code.
     """
 
-    def __init__(self, status_code: int, body: JsonMapping, *args: Any):
-        assert "error_message" in body
-        super(SugarError, self).__init__(body["error_message"], *args)
+    def __init__(self, status_code: int, body: Any, *args: Any):
+        try:
+            error_message = str(body["error_message"])
+        except TypeError:
+            error_message = str(body)
+        super(SugarError, self).__init__(error_message, *args)
         self.status_code = status_code
 
 

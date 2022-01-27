@@ -1,12 +1,14 @@
+import asyncio
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Protocol
+from typing import Any, Awaitable, Callable, Mapping, Optional, Protocol, Union
 from uuid import uuid4
 
+import aiohttp
 import pytest
 import requests
 
-from zucker import RequestsClient, SugarError, model
-from zucker.client import SyncClient
+from zucker import AioClient, RequestsClient, SugarError, model
+from zucker.client import AsyncClient, SyncClient
 from zucker.utils import JsonMapping, JsonType
 
 
@@ -19,8 +21,15 @@ class MockResponse:
     def ok(self) -> bool:
         return self.status_code < 400
 
-    def json(self) -> JsonType:
+    async def async_json(self) -> JsonType:
         return self.data
+
+    def json(self) -> Union[JsonType, Awaitable[JsonType]]:
+        try:
+            asyncio.get_running_loop()
+            return self.async_json()
+        except RuntimeError:
+            return self.data
 
 
 class HandlerType(Protocol):
@@ -48,7 +57,7 @@ def fake_server(monkeypatch: pytest.MonkeyPatch) -> FakeServer:
         handler = handler_callable
 
     def fake_request(
-        self: requests.Session, request_method: str, path: str, **kwargs: Any
+        self: Any, request_method: str, path: str, **kwargs: Any
     ) -> MockResponse:
         kwargs.setdefault("headers", {})
         kwargs.setdefault("data", {})
@@ -66,16 +75,34 @@ def fake_server(monkeypatch: pytest.MonkeyPatch) -> FakeServer:
         else:
             raise RuntimeError(f"requesting non-mocked path: {path!r} ({method})")
 
+    async def async_fake_request(
+        self: Any, request_method: str, path: str, **kwargs: Any
+    ) -> MockResponse:
+        return fake_request(None, request_method, path, **kwargs)
+
     monkeypatch.setattr(requests.Session, "request", fake_request)
     for method in ("get", "post"):
         monkeypatch.setattr(requests, method, partial(fake_request, method))
+    monkeypatch.setattr(aiohttp.ClientSession, "request", async_fake_request)
 
     return set_handler
 
 
 @pytest.fixture
-def authenticated_client(monkeypatch: pytest.MonkeyPatch) -> SyncClient:
+def authenticated_sync_client(monkeypatch: pytest.MonkeyPatch) -> SyncClient:
     client = RequestsClient("http://base", "user", "pass")
+
+    def fake_authentication_payload() -> None:
+        return None
+
+    monkeypatch.setattr(client, "_prepare_authentication", fake_authentication_payload)
+
+    return client
+
+
+@pytest.fixture
+def authenticated_async_client(monkeypatch: pytest.MonkeyPatch) -> AsyncClient:
+    client = AioClient("http://base", "user", "pass")
 
     def fake_authentication_payload() -> None:
         return None
@@ -158,7 +185,9 @@ def test_authentication_and_request(fake_server: FakeServer) -> None:
     assert "theerror" in str(error)
 
 
-def test_metadata(authenticated_client: SyncClient, fake_server: FakeServer) -> None:
+def test_metadata(
+    authenticated_sync_client: SyncClient, fake_server: FakeServer
+) -> None:
     server_flavor = "PRO"
     server_version = "9.0.1"
     server_build = "176"
@@ -188,7 +217,7 @@ def test_metadata(authenticated_client: SyncClient, fake_server: FakeServer) -> 
         return None
 
     fake_server(handle_request)
-    client = authenticated_client
+    client = authenticated_sync_client
     client.fetch_metadata("server_info", "full_module_list")
 
     assert client.server_info == (server_flavor, server_version, server_build)

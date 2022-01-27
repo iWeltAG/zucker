@@ -19,6 +19,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from zucker.exceptions import (
@@ -27,18 +28,18 @@ from zucker.exceptions import (
     UnfetchedMetadataError,
     ZuckerException,
 )
-from zucker.utils import (
-    JsonMapping,
-    JsonType,
-    MutableJsonMapping,
-    check_json,
-    check_json_mapping,
-)
+from zucker.utils import JsonMapping, JsonType, MutableJsonMapping, check_json_mapping
 
 if TYPE_CHECKING:
     from zucker.model.module import AsyncModule, BoundModule, SyncModule  # noqa: F401
 
 _T = TypeVar("_T")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
+_T6 = TypeVar("_T6")
 
 
 class BaseClient(abc.ABC):
@@ -267,7 +268,7 @@ class BaseClient(abc.ABC):
         ``JsonMapping`` type.
         """
         try:
-            response_json = check_json(data)
+            response_json = check_json_mapping(data)
         except TypeError:
             raise InvalidSugarResponseError("got invalid JSON response from Sugar")
         if 200 <= response_code < 300:
@@ -387,7 +388,7 @@ class AsyncClient(BaseClient):
         )
 
         self._handle_bulk: Optional[
-            Callable[[JsonMapping], Awaitable[JsonMapping]]
+            Callable[[JsonMapping], Awaitable[tuple[int, JsonMapping]]]
         ] = None
 
     async def close(self) -> None:
@@ -461,11 +462,73 @@ class AsyncClient(BaseClient):
         else:
             await self._ensure_authentication()
 
-            response_code, response_json = await self.raw_request(
+            response_code, response_raw_json = await self.raw_request(
                 method, endpoint, params=params, data=data, json=json
             )
+            response_json = check_json_mapping(response_raw_json)
 
         return self._finalize_request(response_code, response_json)
+
+    # Typing for bulk() is a bit stupid because the Python typing system doesn't (yet)
+    # support unknown-length type variable lists. See here:
+    # https://github.com/python/typeshed/pull/1550
+    # https://github.com/python/typeshed/blob/master/stdlib/asyncio/tasks.pyi#L44-L47
+
+    @overload
+    async def bulk(self, action_1: Awaitable[_T1], /) -> tuple[_T1]:
+        ...
+
+    @overload
+    async def bulk(
+        self, action_1: Awaitable[_T1], action_2: Awaitable[_T2], /
+    ) -> tuple[_T1, _T2]:
+        ...
+
+    @overload
+    async def bulk(
+        self,
+        action_1: Awaitable[_T1],
+        action_2: Awaitable[_T2],
+        action_3: Awaitable[_T3],
+        /,
+    ) -> tuple[_T1, _T2, _T3]:
+        ...
+
+    @overload
+    async def bulk(
+        self,
+        action_1: Awaitable[_T1],
+        action_2: Awaitable[_T2],
+        action_3: Awaitable[_T3],
+        action_4: Awaitable[_T4],
+        /,
+    ) -> tuple[_T1, _T2, _T3, _T4]:
+        ...
+
+    @overload
+    async def bulk(
+        self,
+        action_1: Awaitable[_T1],
+        action_2: Awaitable[_T2],
+        action_3: Awaitable[_T3],
+        action_4: Awaitable[_T4],
+        action_5: Awaitable[_T5],
+        /,
+    ) -> tuple[_T1, _T2, _T3, _T4, _T5]:
+        ...
+
+    @overload
+    async def bulk(
+        self,
+        action_1: Awaitable[_T1],
+        action_2: Awaitable[_T2],
+        action_3: Awaitable[_T3],
+        action_4: Awaitable[_T4],
+        action_5: Awaitable[_T5],
+        action_6: Awaitable[_T6],
+        /,
+    ) -> tuple[_T1, _T2, _T3, _T4, _T5, _T6]:
+        ...
 
     async def bulk(self, *actions: Awaitable[Any]) -> tuple[Any, ...]:
         """Run a sequence of actions that require server communication together.
@@ -488,7 +551,7 @@ class AsyncClient(BaseClient):
         # hold all requests that are currently waiting to be processed. The second
         # contains responses for those requests where a /bulk call has returned data.
         next_key = 0
-        request_definitions = dict[int, (JsonMapping, asyncio.Event)]()
+        request_definitions = dict[int, tuple[JsonMapping, asyncio.Event]]()
         responses = dict[int, tuple[int, JsonMapping]]()
 
         # This event will be set whenever the number of waiting requests change.
@@ -591,7 +654,7 @@ class AsyncClient(BaseClient):
             for event in request_events:
                 event.set()
 
-        return await asyncio.gather(*action_tasks)
+        return await asyncio.gather(*action_tasks)  # type: ignore
 
     async def fetch_metadata(self, *types: str) -> None:
         """Make sure server metadata for the given set of types is available."""
