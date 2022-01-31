@@ -5,12 +5,7 @@ import colored
 from zucker.client import SyncClient
 from zucker.model import fields
 
-from ..inspection import (
-    InspectedField,
-    InspectedModule,
-    get_metadata,
-    inspect_modules_with_fields,
-)
+from ..inspection import InspectedField, InspectedModule, inspect_modules_with_fields
 
 TERM = colored.attr("reset")
 TERM_MODULE_NAME = colored.fg("blue")
@@ -88,8 +83,9 @@ def format_module(module: InspectedModule) -> str:
 
 
 def run_inspect(client: SyncClient, **kwargs: None) -> None:
-    metadata = get_metadata(client)
-    modules = inspect_modules_with_fields(metadata)
+    client.fetch_metadata("modules")
+    modules_metadata = client.get_metadata_item("modules")
+    modules = inspect_modules_with_fields(modules_metadata)
 
     for module in sorted(modules, key=lambda module: module.name):
         print(format_module(module))
