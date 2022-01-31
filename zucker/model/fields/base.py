@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import abc
+from numbers import Number
 from typing import Awaitable  # noqa: F401
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, overload
 
-from zucker.filtering import NegatableFilter, NullishFilter, ValuesFilter
+from zucker.filtering import NegatableFilter, NullishFilter, NumericFilter, ValuesFilter
 from zucker.utils import ApiType, JsonType
 
 if TYPE_CHECKING:
@@ -295,36 +296,36 @@ class MutableScalarField(
 
 
 class MutableNumericField(
-    Generic[NativeType], MutableScalarField[NativeType, NativeType]
+    Generic[ApiType], MutableScalarField[ApiType, ApiType], abc.ABC
 ):
-    def __lt__(self, other: float):
+    def __lt__(self, other: Number) -> NumericFilter:
         """Filter for values less than the specified scalar.
 
         :param other: Only records with a field value less than this value will be
             included.
         """
-        return filtering.NumericFilter(self.name, other, greater=False, equal=False)
+        return NumericFilter(self.name, other, greater=False, equal=False)
 
-    def __lte__(self, other: float):
+    def __lte__(self, other: Number) -> NumericFilter:
         """Filter for values less than or equal to the specified scalar.
 
         :param other: Only records with a field value less than or equal to this value
             will be included.
         """
-        return filtering.NumericFilter(self.name, other, greater=False, equal=True)
+        return NumericFilter(self.name, other, greater=False, equal=True)
 
-    def __gt__(self, other: float):
+    def __gt__(self, other: Number) -> NumericFilter:
         """Filter for values less than the specified scalar.
 
         :param other: Only records with a field value greater than this value will be
             included.
         """
-        return filtering.NumericFilter(self.name, other, greater=True, equal=False)
+        return NumericFilter(self.name, other, greater=True, equal=False)
 
-    def __gte__(self, other: float):
+    def __gte__(self, other: Number) -> NumericFilter:
         """Filter for values greater than or equal to the specified scalar.
 
         :param other: Only records with a field value greater than or equal to this
             value will be included.
         """
-        return filtering.NumericFilter(self.name, other, greater=True, equal=True)
+        return NumericFilter(self.name, other, greater=True, equal=True)

@@ -27,8 +27,8 @@ __all__ = [
 @field_for_metadata.register(metadata_attributes=dict(type="url"), require_db=True)
 class URLField(MutableScalarField[urllib_parse.ParseResult, str]):
     @staticmethod
-    def load_value(raw_value: str):
-        if not isinstance(raw_value, JsonType):
+    def load_value(raw_value: JsonType) -> urllib_parse.ParseResult:
+        if not isinstance(raw_value, str):
             raise TypeError(
                 f"URL field must be populated with a string - got "
                 f"{type(raw_value)!r}"
@@ -59,7 +59,7 @@ class LegacyEmailField(MutableScalarField[str, str]):
 
     @staticmethod
     def load_value(raw_value: JsonType) -> str:
-        if not isinstance(raw_value, JsonType):
+        if not isinstance(raw_value, str):
             raise TypeError(
                 f"string field must be populated with a string - got "
                 f"{type(raw_value)!r}"
