@@ -69,14 +69,12 @@ class FieldMetadataRegistry:
         self.field_types: set[Type[Field[Any, Any]]] = set()
 
     def __call__(self, context: FieldInspectionContext) -> FieldInitializerReturnType:
-        results = (initialize(context) for initialize in self.field_initializers)
-        valid_results = [result for result in results if result is not None]
-        if len(valid_results) == 0:
-            return None
-        elif len(valid_results) > 1:
-            raise RuntimeError("more than one field matched for metadata block")
-        else:
-            return valid_results[0]
+        """Find the first registered field that accepts a specified context."""
+        for initialize in self.field_initializers:
+            result = initialize(context)
+            if result is not None:
+                return result
+        return None
 
     def register(
         self,

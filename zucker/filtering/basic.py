@@ -175,8 +175,8 @@ class NumericFilter(NegatableFilter[Number]):
         field_name: str,
         value: Number,
         *,
-        greater: bool = False,
-        equal: bool = False,
+        greater: bool,
+        equal: bool,
     ):
         if not isinstance(value, Number):
             raise TypeError(

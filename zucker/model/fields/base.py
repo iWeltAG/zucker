@@ -292,3 +292,39 @@ class MutableScalarField(
     def _set_value(self, record: BaseModule, value: Union[ApiType, NativeType]) -> None:
         raw_value = self.serialize(value)
         record._updated_data[self.name] = raw_value
+
+
+class MutableNumericField(
+    Generic[NativeType], MutableScalarField[NativeType, NativeType]
+):
+    def __lt__(self, other: float):
+        """Filter for values less than the specified scalar.
+
+        :param other: Only records with a field value less than this value will be
+            included.
+        """
+        return filtering.NumericFilter(self.name, other, greater=False, equal=False)
+
+    def __lte__(self, other: float):
+        """Filter for values less than or equal to the specified scalar.
+
+        :param other: Only records with a field value less than or equal to this value
+            will be included.
+        """
+        return filtering.NumericFilter(self.name, other, greater=False, equal=True)
+
+    def __gt__(self, other: float):
+        """Filter for values less than the specified scalar.
+
+        :param other: Only records with a field value greater than this value will be
+            included.
+        """
+        return filtering.NumericFilter(self.name, other, greater=True, equal=False)
+
+    def __gte__(self, other: float):
+        """Filter for values greater than or equal to the specified scalar.
+
+        :param other: Only records with a field value greater than or equal to this
+            value will be included.
+        """
+        return filtering.NumericFilter(self.name, other, greater=True, equal=True)
