@@ -195,12 +195,9 @@ class FieldMetadataRegistry:
 field_for_metadata = FieldMetadataRegistry()
 
 
-def get_metadata(client: SyncClient) -> JsonMapping:
-    client.fetch_metadata("modules")
-    return client.get_metadata_item("modules")
-
-
-def inspect_modules_with_fields(metadata: Any) -> Sequence[InspectedModule]:
+def inspect_modules_with_fields(
+    modules_metadata: JsonMapping,
+) -> Sequence[InspectedModule]:
     # TODO Convert these to actual type guards:
 
     def assert_sugar_mapping(mapping: Any) -> None:
@@ -214,12 +211,10 @@ def inspect_modules_with_fields(metadata: Any) -> Sequence[InspectedModule]:
         if name not in mapping:
             raise InvalidSugarResponseError(f"expecting mapping that contains {name!r}")
 
-    assert_sugar_contains(metadata, "modules")
-
     # First pass: create an inspection result for each module. This allows all modules
     # to be referenced, even if their fields haven't been populated yet.
     modules: dict[str, InspectedModule] = {}
-    for module_name, module_metadata in metadata["modules"].items():
+    for module_name, module_metadata in modules_metadata.items():
         if module_name in modules:
             raise InvalidSugarResponseError(
                 f"got duplicate module name: {module_name!r}"
@@ -230,17 +225,17 @@ def inspect_modules_with_fields(metadata: Any) -> Sequence[InspectedModule]:
             class_arguments=dict(
                 api_name=module_name,
             ),
-            raw_metadata=module_metadata,
+            raw_metadata=module_metadata,  # type: ignore
         )
 
     # Second pass: go through each module again and inspect their fields.
-    for module_name, module_metadata in metadata["modules"].items():
+    for module_name, module_metadata in modules_metadata.items():
         assert_sugar_contains(module_metadata, "fields")
-        assert_sugar_mapping(module_metadata["fields"])
+        assert_sugar_mapping(module_metadata["fields"])  # type: ignore
 
         fields = list[InspectedField]()
 
-        for field_name, field_metadata in module_metadata["fields"].items():
+        for field_name, field_metadata in module_metadata["fields"].items():  # type: ignore
             if "name" in field_metadata and field_name != field_metadata["name"]:
                 raise InvalidSugarResponseError(
                     f"non-matching field names {field_name!r} (from field set key) and "

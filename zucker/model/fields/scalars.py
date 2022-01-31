@@ -24,6 +24,23 @@ __all__ = [
 # https://support.sugarcrm.com/Documentation/Sugar_Versions/11.2/Pro/Administration_Guide/Developer_Tools/Studio/Fields/
 
 
+@field_for_metadata.register(metadata_attributes=dict(name="id"), require_db=True)
+@field_for_metadata.register(metadata_attributes=dict(type="id"), require_db=True)
+class IdField(ScalarField[UUID, str]):
+    @classmethod
+    def load_value(cls, raw_value: JsonType) -> UUID:
+        if not isinstance(raw_value, str):
+            raise TypeError(f"IDs must be strings, got {type(raw_value)!r}")
+        return UUID(raw_value)
+
+    @classmethod
+    def serialize(cls, value: Union[UUID, str]) -> str:
+        if isinstance(value, str):
+            # "Load" the value to check if it is a valid ID.
+            value = cls.load_value(value)
+        return str(value)
+
+
 @field_for_metadata.register(metadata_attributes=dict(type="url"), require_db=True)
 class URLField(MutableScalarField[urllib_parse.ParseResult, str]):
     @staticmethod
@@ -173,18 +190,3 @@ class IntegerField(MutableNumericField[int]):
     @staticmethod
     def serialize(value: int) -> int:
         return value
-
-
-class IdField(ScalarField[UUID, str]):
-    @classmethod
-    def load_value(cls, raw_value: JsonType) -> UUID:
-        if not isinstance(raw_value, str):
-            raise TypeError(f"IDs must be strings, got {type(raw_value)!r}")
-        return UUID(raw_value)
-
-    @classmethod
-    def serialize(cls, value: Union[UUID, str]) -> str:
-        if isinstance(value, str):
-            # "Load" the value to check if it is a valid ID.
-            value = cls.load_value(value)
-        return str(value)
