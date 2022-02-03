@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
@@ -504,6 +504,38 @@ class SyncView(
         return record
 
 
+class AsyncViewIterator(Generic[AsyncModuleType]):
+    def __init__(self, view: AsyncView[AsyncModuleType]):
+        self.view = view
+        self.current_index = 0
+        self.queue: list[AsyncModuleType] = []
+
+    def __aiter__(self) -> AsyncIterator[AsyncModuleType]:
+        return self
+
+    async def __anext__(self) -> AsyncModuleType:
+        if len(self.queue) == 0:
+            # Note: this implementation definitely isn't perfect yet and does introduce
+            # some rather ugly database strain (since Sugar probably doesn't batch these
+            # in some smart manner and just sends of 6 requests). But it's still only
+            # one HTTP request, so it's better than fetching records individually.
+            new_records = await self.view._module.get_client().bulk(
+                self.view[self.current_index],
+                self.view[self.current_index + 1],
+                self.view[self.current_index + 2],
+                self.view[self.current_index + 3],
+                self.view[self.current_index + 4],
+                self.view[self.current_index + 5],
+            )
+            self.queue.extend(new_records)
+            self.current_index += 6
+        record = self.queue.pop(0)
+        if record is None:
+            raise StopAsyncIteration
+        else:
+            return record
+
+
 class AsyncView(
     Generic[AsyncModuleType],
     View[
@@ -512,6 +544,9 @@ class AsyncView(
         Awaitable[Optional[AsyncModuleType]],
     ],
 ):
+    def __aiter__(self) -> AsyncIterator[AsyncModuleType]:
+        return AsyncViewIterator(self)
+
     async def length(self) -> int:
         await self._calculate_range()
         assert isinstance(self._range, range)
@@ -538,13 +573,31 @@ class AsyncView(
 
     async def _calculate_range(self) -> None:
         """Apply all pending slicing operations on the cached range object."""
+        # This is a pretty messy hack for when this method gets called inside a bulk()
+        # session multiple times. The problem is that when self._pending_slices gets
+        # emptied further down, only the first instance of this method will get the
+        # actual list of pending slices and the other ones will get an empty list -
+        # since it was already emptied by the first list. The clean solution here would
+        # be to properly synchronize this call so that only one is run at once (because
+        # they all return the same thing anyway, and therefore we only need one request
+        # ). The problem is that bulk() then thinks that they are all waiting on some
+        # external awaitable when instead they are waiting on each other. Since the bulk
+        # query is only started when all actions either resolve or are waiting for a
+        # (sugar) request, it would end up in a deadlock. To get around this problem,
+        # we copy the list of pending slices, so this method can be called in parallel
+        # without a problem (let's assume here that the server will return the same
+        # record count every time).
+        pending_slices = self._pending_slices[:]
+
         if self._range is None:
             if self._size is None:
                 await self._fetch_size()
             assert isinstance(self._size, int)
             self._range = range(0, self._size, 1)
-        while len(self._pending_slices) > 0:
-            self._range = self._range[self._pending_slices.pop(0)]
+
+        while len(pending_slices) > 0:
+            self._range = self._range[pending_slices.pop(0)]
+        self._pending_slices.clear()
 
     ###################
     # Record fetching #
