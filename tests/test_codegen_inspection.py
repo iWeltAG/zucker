@@ -133,7 +133,7 @@ def test_field_resolving(inspected_field: InspectedField) -> None:
 def test_module_inspection(module: InspectedModule) -> None:
     metadata = {"modules": {module.name: module.raw_metadata}}
 
-    inspection_result = inspect_modules_with_fields(metadata)
+    inspection_result = inspect_modules_with_fields(metadata["modules"])
     assert len(inspection_result) == 1
     inspected_module = inspection_result[0]
     assert inspected_module == module
