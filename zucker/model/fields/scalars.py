@@ -11,12 +11,13 @@ from zucker.utils import JsonType
 from .base import MutableNumericField, MutableScalarField, ScalarField
 
 __all__ = [
-    "StringField",
     "BooleanField",
     "FloatField",
     "IdField",
-    "URLField",
+    "IntegerField",
     "LegacyEmailField",
+    "StringField",
+    "URLField",
 ]
 
 
@@ -27,6 +28,13 @@ __all__ = [
 @field_for_metadata.register(metadata_attributes=dict(name="id"), require_db=True)
 @field_for_metadata.register(metadata_attributes=dict(type="id"), require_db=True)
 class IdField(ScalarField[UUID, str]):
+    """Immutable field for accessing record IDs.
+
+    An instance of this field is automatically created for every module. Manually
+    creating fields of this type should only be necessary for referencing links. In
+    Python, IDs are represented by :class:`UUID` objects.
+    """
+
     @classmethod
     def load_value(cls, raw_value: JsonType) -> UUID:
         if not isinstance(raw_value, str):
@@ -43,6 +51,14 @@ class IdField(ScalarField[UUID, str]):
 
 @field_for_metadata.register(metadata_attributes=dict(type="url"), require_db=True)
 class URLField(MutableScalarField[urllib_parse.ParseResult, str]):
+    """Mutable string field for URLs.
+
+    This should be used for database columns of type ``url``. URLs will be decoded and
+    returned as an instance of :class:`urllib.parse.ParseResult`, which contains the
+    parsed components of the URL. To get a string, call ``str()`` with the result
+    object.
+    """
+
     @staticmethod
     def load_value(raw_value: JsonType) -> urllib_parse.ParseResult:
         if not isinstance(raw_value, str):
@@ -69,9 +85,12 @@ class URLField(MutableScalarField[urllib_parse.ParseResult, str]):
 class LegacyEmailField(MutableScalarField[str, str]):
     """Field for legacy email addresses (``email1`` and ``email2``).
 
-    See the `documentation`_ for the difference between this and the other email fields.
+    This is a string field that also validates [#validation]_ any input to be
+    email-like. It should only be used on string columns with names ``email1`` and
+    ``email2``.
 
-    .. _documentation: https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.2/Architecture/Email_Addresses/#REST_API
+    .. [#validation] Validation is currently pretty basic, because validating emails is hard. The
+      Sugar backend will have the final call on what is treated as valid.
     """
 
     @staticmethod
@@ -100,6 +119,12 @@ class LegacyEmailField(MutableScalarField[str, str]):
 @field_for_metadata.register(metadata_attributes=dict(type="longtext"), require_db=True)
 @field_for_metadata.register(metadata_attributes=dict(type="textarea"), require_db=True)
 class StringField(MutableScalarField[str, str]):
+    """Mutable field that handles the various string columns.
+
+    This will handle any backend field that has the database type ``varchar``, ``text``,
+    ``text``, ``encrypt``, ``longtext`` or ``textarea``.
+    """
+
     @staticmethod
     def load_value(raw_value: JsonType) -> str:
         if not isinstance(raw_value, str):
@@ -132,6 +157,8 @@ class StringField(MutableScalarField[str, str]):
 
 @field_for_metadata.register(metadata_attributes=dict(type="bool"), require_db=True)
 class BooleanField(MutableScalarField[bool, bool]):
+    """Mutable field for boolean columns."""
+
     @staticmethod
     def load_value(raw_value: JsonType) -> bool:
         if not isinstance(raw_value, bool):
@@ -157,6 +184,11 @@ class BooleanField(MutableScalarField[bool, bool]):
 @field_for_metadata.register(metadata_attributes=dict(type="float"), require_db=True)
 @field_for_metadata.register(metadata_attributes=dict(type="decimal"), require_db=True)
 class FloatField(MutableNumericField[float]):
+    """Mutable field for floating-point number columns.
+
+    This is appropriate for backend fields that have the type ``float`` or ``decimal``.
+    """
+
     @staticmethod
     def load_value(raw_value: JsonType) -> float:
         if not isinstance(raw_value, float):
@@ -178,6 +210,12 @@ class FloatField(MutableNumericField[float]):
 @field_for_metadata.register(metadata_attributes=dict(type="tinyint"), require_db=True)
 @field_for_metadata.register(metadata_attributes=dict(type="ulong"), require_db=True)
 class IntegerField(MutableNumericField[int]):
+    """Mutable field for integer columns.
+
+    Use this for backend fields of type ``int``, ``integer``, ``long``, ``smallint``,
+    ``tinyint`` or ``ulong``.
+    """
+
     @staticmethod
     def load_value(raw_value: JsonType) -> int:
         if not isinstance(raw_value, int):

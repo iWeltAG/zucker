@@ -16,6 +16,17 @@ class RelatedField(
     Generic[SyncModuleType, AsyncModuleType],
     Field[SyncView[SyncModuleType], AsyncView[AsyncModuleType]],
 ):
+    """Field that returns a view on a relationship link.
+
+    :param related_module: The module type on the other side of the relationship.
+    :param link_name: Name of the link.
+
+    .. note::
+      The related module used to initialize this field must be a bound module with the
+      same client as the module the field is attached to. You can't mix synchronous and
+      asynchronous models here.
+    """
+
     def __init__(
         self,
         related_module: Union[Type[SyncModuleType], Type[AsyncModuleType]],
