@@ -547,6 +547,9 @@ class AsyncView(
     def __aiter__(self) -> AsyncIterator[AsyncModuleType]:
         return AsyncViewIterator(self)
 
+    def __reversed__(self) -> AsyncIterator[AsyncModuleType]:
+        return AsyncViewIterator(self[::-1])
+
     async def length(self) -> int:
         await self._calculate_range()
         assert isinstance(self._range, range)
