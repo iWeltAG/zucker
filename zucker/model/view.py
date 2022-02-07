@@ -257,7 +257,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         return self.filtered(self._module.id == key)
 
     @abc.abstractmethod
-    def get_by_id(self, key: str) -> OptionalGetReturn:
+    def get_by_id(self, key: str) -> GetReturn:
         """Retrieve a record object by it's ID."""
 
     def _prepare_get_by_offset(
@@ -307,7 +307,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_by_index(self, index: int) -> OptionalGetReturn:
+    def get_by_index(self, index: int) -> GetReturn:
         """Retrieve a record object by it's index in this view."""
 
     def _index_to_offset(self, index: int) -> Optional[int]:
@@ -476,7 +476,7 @@ class SyncView(
         while len(self._pending_slices) > 0:
             self._range = self._range[self._pending_slices.pop(0)]
 
-    def get_by_id(self, key: str) -> Optional[SyncModuleType]:
+    def get_by_id(self, key: str) -> SyncModuleType:
         try:
             return self._prepare_get_by_id(key)[0]
         except IndexError:
@@ -492,7 +492,7 @@ class SyncView(
         else:
             return preparation
 
-    def get_by_index(self, index: int) -> Optional[SyncModuleType]:
+    def get_by_index(self, index: int) -> SyncModuleType:
         self._calculate_range()
 
         offset = self._index_to_offset(index)
@@ -603,7 +603,7 @@ class AsyncView(
     # Record fetching #
     ###################
 
-    async def get_by_id(self, key: str) -> Optional[AsyncModuleType]:
+    async def get_by_id(self, key: str) -> AsyncModuleType:
         try:
             return await self._prepare_get_by_id(key)[0]
         except IndexError:
@@ -621,11 +621,11 @@ class AsyncView(
         else:
             return preparation
 
-    async def get_by_index(self, index: int) -> Optional[AsyncModuleType]:
+    async def get_by_index(self, index: int) -> AsyncModuleType:
         await self._calculate_range()
         offset = self._index_to_offset(index)
         if offset is None:
-            return None
+            raise IndexError(index)
         record = await self._get_by_offset(offset)
         if record is None:
             raise IndexError(index)

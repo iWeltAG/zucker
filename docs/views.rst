@@ -55,9 +55,8 @@ case, you will receive ``Contact`` objects.
 
 Alternative to the array syntax, you can also use the
 :meth:`~zucker.model.view.View.get_by_index` or
-:meth:`~zucker.model.view.View.get_by_id` methods. These behave the same way but
-return ``None`` instead of raising errors (:exc:`IndexError` or :exc:`KeyError`)
-when no matching record is found.
+:meth:`~zucker.model.view.View.get_by_id` methods.
+Both raise errors (:exc:`IndexError` or :exc:`KeyError`) when no matching record is found.
 
 Iteration
 ~~~~~~~~~
