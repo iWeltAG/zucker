@@ -175,6 +175,8 @@ Zucker currently bundles two client implementations:
 
 .. autoclass:: zucker.AioClient
 
+.. _implementing_clients:
+
 Implementing your own client
 ----------------------------
 

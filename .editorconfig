@@ -12,3 +12,6 @@ max_line_length = 80
 [*.py]
 indent_size = 4
 max_line_length = 88
+
+[*.rst]
+max_line_length = 100
