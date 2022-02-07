@@ -353,17 +353,6 @@ class BoundModule(Generic[ClientType], BaseModule, abc.ABC):
         Any parameters passed here will be used as filters.
         """
 
-    # @classmethod
-    # def get(
-    #     cls: Type[Self], *filters: Union[JsonMapping, GenericFilter]
-    # ) -> Optional[Self]:
-    #     """Return the first and only element in a view, if it is present."""
-    #     view = cls.find(*filters)
-    #     if len(view) != 1:
-    #         return None
-    #     else:
-    #         return view[0]
-
     @classmethod
     def _lookup_record_cache(cls: Type[BoundSelf], key: str) -> Optional[BoundSelf]:
         item = cls._record_cache.get(key, None)
@@ -395,6 +384,16 @@ class SyncModule(BoundModule[SyncClient], abc.ABC):
             view = view.filtered(*filters)
         return view
 
+    @classmethod
+    def get(
+        cls: Type[SyncSelf], *filters: Union[JsonMapping, GenericFilter]
+    ) -> Optional[SyncSelf]:
+        """Return the first and only element in a view, if it is present."""
+        try:
+            return cls.find(*filters)[0]
+        except IndexError:
+            return None
+
     def save(self) -> None:
         method, endpoint, data = self._prepare_save()
         record_data = self.client.request(method, endpoint, json=data)
@@ -424,6 +423,16 @@ class AsyncModule(BoundModule[AsyncClient], abc.ABC):
         if len(filters) > 0:
             view = view.filtered(*filters)
         return view
+
+    @classmethod
+    def get(
+        cls: Type[AsyncSelf], *filters: Union[JsonMapping, GenericFilter]
+    ) -> Optional[AsyncSelf]:
+        """Return the first and only element in a view, if it is present."""
+        try:
+            return await cls.find(*filters)[0]
+        except IndexError:
+            return None
 
     async def save(self) -> None:
         method, endpoint, data = self._prepare_save()
