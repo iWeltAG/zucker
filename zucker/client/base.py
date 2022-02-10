@@ -661,6 +661,7 @@ class AsyncClient(BaseClient):
             for event in request_events:
                 event.set()
 
+        self._handle_bulk = None
         return await asyncio.gather(*action_tasks)  # type: ignore
 
     async def fetch_metadata(self, *types: str) -> None:
