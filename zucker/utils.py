@@ -1,5 +1,4 @@
-from collections.abc import Mapping, MutableMapping, Sequence
-from typing import Any, TypeVar, Union, cast
+from typing import Any, Mapping, MutableMapping, Sequence, TypeVar, Union, cast
 
 __all__ = [
     "JsonPrimitive",

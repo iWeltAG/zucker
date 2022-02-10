@@ -1,8 +1,7 @@
 import argparse
 import sys
-from collections.abc import Sequence
 from getpass import getpass
-from typing import Optional, Union
+from typing import Optional, Sequence, Union
 
 from zucker.client import RequestsClient
 

@@ -1,8 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, MutableSequence, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Mapping,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from zucker.exceptions import InvalidSugarResponseError
 from zucker.utils import JsonMapping, JsonPrimitive, JsonType

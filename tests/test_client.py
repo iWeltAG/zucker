@@ -1,7 +1,6 @@
 import asyncio
-from collections.abc import Awaitable, Callable, Mapping
 from functools import partial
-from typing import Any, Optional, Protocol, Union
+from typing import Any, Awaitable, Callable, Mapping, Optional, Protocol, Union
 from uuid import uuid4
 
 import aiohttp

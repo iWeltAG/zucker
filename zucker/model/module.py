@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Awaitable, Iterator, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     ClassVar,
     Generic,
+    Iterator,
+    MutableMapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,

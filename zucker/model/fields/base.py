@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Awaitable  # noqa: F401
 from numbers import Number
+from typing import Awaitable  # noqa: F401
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, overload
 
 from zucker.filtering import NegatableFilter, NullishFilter, NumericFilter, ValuesFilter

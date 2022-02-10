@@ -3,21 +3,19 @@ from __future__ import annotations
 import abc
 import asyncio
 import urllib.parse
-from collections.abc import (
-    Awaitable,
-    Callable,
-    Iterator,
-    Mapping,
-    MutableMapping,
-    Sequence,
-)
 from datetime import datetime, timedelta
 from json import dumps as dump_json
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
+    Callable,
+    Iterator,
     Literal,
+    Mapping,
+    MutableMapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,

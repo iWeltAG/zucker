@@ -1,5 +1,4 @@
-from collections.abc import Mapping
-from typing import Optional
+from typing import Mapping, Optional
 
 from zucker.utils import JsonMapping, JsonType
 

@@ -2,24 +2,22 @@ from __future__ import annotations
 
 import abc
 import sys
-from collections.abc import (
-    AsyncIterator,
-    Awaitable,
-    Iterable,
-    Iterator,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-)
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Awaitable,
     Dict,
     Generic,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,

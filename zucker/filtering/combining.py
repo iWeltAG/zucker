@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import copy
-from collections.abc import Mapping
-from typing import Union
+from typing import Mapping, Union
 
 from ..utils import JsonMapping
 from .types import Combinator, GenericFilter
