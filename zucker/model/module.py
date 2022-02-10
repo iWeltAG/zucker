@@ -425,7 +425,7 @@ class AsyncModule(BoundModule[AsyncClient], abc.ABC):
         return view
 
     @classmethod
-    def get(
+    async def get(
         cls: Type[AsyncSelf], *filters: Union[JsonMapping, GenericFilter]
     ) -> Optional[AsyncSelf]:
         """Return the first and only element in a view, if it is present."""

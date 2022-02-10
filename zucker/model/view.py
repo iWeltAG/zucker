@@ -513,6 +513,12 @@ class AsyncViewIterator(Generic[AsyncModuleType]):
     def __aiter__(self) -> AsyncIterator[AsyncModuleType]:
         return self
 
+    async def _get_or_none(self, index_offset: int) -> Optional[AsyncModuleType]:
+        try:
+            return await self.view[self.current_index + index_offset]
+        except IndexError:
+            return None
+
     async def __anext__(self) -> AsyncModuleType:
         if len(self.queue) == 0:
             # Note: this implementation definitely isn't perfect yet and does introduce
@@ -520,12 +526,12 @@ class AsyncViewIterator(Generic[AsyncModuleType]):
             # in some smart manner and just sends of 6 requests). But it's still only
             # one HTTP request, so it's better than fetching records individually.
             new_records = await self.view._module.get_client().bulk(
-                self.view[self.current_index],
-                self.view[self.current_index + 1],
-                self.view[self.current_index + 2],
-                self.view[self.current_index + 3],
-                self.view[self.current_index + 4],
-                self.view[self.current_index + 5],
+                self._get_or_none(0),
+                self._get_or_none(1),
+                self._get_or_none(2),
+                self._get_or_none(3),
+                self._get_or_none(4),
+                self._get_or_none(5),
             )
             self.queue.extend(new_records)
             self.current_index += 6
