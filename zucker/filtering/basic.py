@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from numbers import Number
-from typing import Any, Generic, Sequence, TypeVar, Union, cast
+from typing import Any, Generic, Literal, Sequence, TypeVar, Union, cast
 
 from ..utils import ApiType, JsonMapping
 from .combining import FilterSet
@@ -160,9 +160,9 @@ class StringContainsFilter(StringFilter):
         return "$ends"
 
 
-class NotEmptyFilter(BasicFilter[None]):
+class NotEmptyFilter(BasicFilter[Literal[""]]):
     def __init__(self, field_name: str):
-        super().__init__(field_name, None)
+        super().__init__(field_name, "")
 
     @property
     def operator(self) -> str:
