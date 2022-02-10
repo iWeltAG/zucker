@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Mapping, Optional
 
 from zucker.utils import JsonMapping, JsonType
