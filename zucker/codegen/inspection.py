@@ -1,20 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, MutableSequence, Sequence
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Type, TypeVar, Union, cast
 
-from zucker.client import SyncClient
 from zucker.exceptions import InvalidSugarResponseError
 from zucker.utils import JsonMapping, JsonPrimitive, JsonType
 
@@ -22,7 +11,7 @@ if TYPE_CHECKING:
     from zucker.model.fields.base import Field
 
     FieldInitializerReturnType = Optional[
-        tuple[Type[Field[Any, Any]], Mapping[str, Any]]
+        Tuple[Type[Field[Any, Any]], Mapping[str, Any]]
     ]
     JsonPrimitiveOrCheckFn = Union[
         JsonPrimitive, Type[Any], Callable[[JsonPrimitive], bool]
@@ -34,7 +23,6 @@ __all__ = [
     "InspectedModule",
     "InspectedField",
     "field_for_metadata",
-    "get_metadata",
     "inspect_modules_with_fields",
 ]
 
@@ -233,7 +221,7 @@ def inspect_modules_with_fields(
         assert_sugar_contains(module_metadata, "fields")
         assert_sugar_mapping(module_metadata["fields"])  # type: ignore
 
-        fields = list[InspectedField]()
+        fields: MutableSequence[InspectedField] = []
 
         for field_name, field_metadata in module_metadata["fields"].items():  # type: ignore
             if "name" in field_metadata and field_name != field_metadata["name"]:

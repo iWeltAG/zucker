@@ -2,17 +2,23 @@ from __future__ import annotations
 
 import abc
 import sys
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
 from contextlib import contextmanager
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Dict,
     Generic,
-    Iterable,
-    Iterator,
     Optional,
     Tuple,
     Type,
@@ -69,7 +75,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         # applied to the range when required. That way, we can defer evaluation as long
         # as possible and are also paradigm-agnostic.
         self._range: Optional[range] = None
-        self._pending_slices = list[slice]()
+        self._pending_slices: MutableSequence[slice] = []
 
         # This parameter holds the total size of the view - not just that part that is
         # targeted by the range. This is fetched by calling .prefetch_size()
@@ -381,7 +387,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
         if self._filter is None:
             return {}
 
-        params = dict[str, str]()
+        params: MutableMapping[str, str] = {}
 
         def parse_filter(prefix: str, filter_definition: JsonType) -> None:
             """Recursively parse a filter definition and add the appropriate parameters
@@ -508,7 +514,7 @@ class AsyncViewIterator(Generic[AsyncModuleType]):
     def __init__(self, view: AsyncView[AsyncModuleType]):
         self.view = view
         self.current_index = 0
-        self.queue: list[AsyncModuleType] = []
+        self.queue: list[Optional[AsyncModuleType]] = []
 
     def __aiter__(self) -> AsyncIterator[AsyncModuleType]:
         return self

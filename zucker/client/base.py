@@ -3,18 +3,21 @@ from __future__ import annotations
 import abc
 import asyncio
 import urllib.parse
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from datetime import datetime, timedelta
 from json import dumps as dump_json
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
-    Callable,
-    Iterator,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -558,8 +561,8 @@ class AsyncClient(BaseClient):
         # hold all requests that are currently waiting to be processed. The second
         # contains responses for those requests where a /bulk call has returned data.
         next_key = 0
-        request_definitions = dict[int, tuple[JsonMapping, asyncio.Event]]()
-        responses = dict[int, tuple[int, JsonMapping]]()
+        request_definitions: MutableMapping[int, Tuple[JsonMapping, asyncio.Event]] = {}
+        responses: MutableMapping[int, Tuple[int, JsonMapping]] = {}
 
         # This event will be set whenever the number of waiting requests change.
         counting_event = asyncio.Event()

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Sequence
 from numbers import Number
-from typing import Any, Generic, Literal, Sequence, TypeVar, Union, cast
+from typing import Any, Generic, Literal, TypeVar, Union, cast
 
 from ..utils import ApiType, JsonMapping
 from .combining import FilterSet

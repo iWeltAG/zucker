@@ -1,4 +1,5 @@
-from typing import Any, Callable, Iterable, Optional, TypedDict
+from collections.abc import Callable, Iterable
+from typing import Any, Optional, TypedDict
 from uuid import uuid4
 
 import pytest
