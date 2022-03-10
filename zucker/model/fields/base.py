@@ -176,7 +176,6 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
             )
         return self.load_value(raw_value)
 
-    @classmethod
     @abc.abstractmethod
     def load_value(cls, raw_value: JsonType) -> NativeType:
         """Load a value from the API into a native data type.
@@ -187,7 +186,6 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
         :returns: A Python data type for this field.
         """
 
-    @classmethod
     @abc.abstractmethod
     def serialize(cls, value: Union[NativeType, ApiType]) -> ApiType:
         """Serialize a native data type into something the API can take back for

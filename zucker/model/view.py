@@ -337,8 +337,6 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             ... SomeModule.find()[3:][3] # Index 3, Offset 6
             ... SomeModule.find(some_filter)[3] # Index 3, Index depending on the filter
         """
-        if index < 0:
-            return None
         try:
             assert isinstance(self._range, range), "view range has not been calculated"
             return self._range[index]

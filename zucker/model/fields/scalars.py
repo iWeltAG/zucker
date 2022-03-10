@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum  # noqa: F401
-from typing import Any, Generic, Optional, TypeVar, Union, Type
+from typing import Any, Generic, Optional, Type, TypeVar, Union, cast
 from urllib import parse as urllib_parse
 from uuid import UUID
 
@@ -272,5 +272,8 @@ class EnumField(Generic[EnumType], MutableScalarField[EnumType, Union[str, int, 
         except ValueError:
             return self._enum["DEFAULT"]
 
-    def serialize(self, enum_value: EnumType) -> Union[str, int, bool]:
-        return enum_value.value
+    def serialize(self, value: Union[EnumType, str, int]) -> Union[str, int, bool]:
+        if isinstance(value, (str, int)):
+            return value
+        else:
+            return cast(Union[str, int, bool], value.value)

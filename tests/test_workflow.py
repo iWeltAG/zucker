@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-from typing import cast
+from typing import AsyncGenerator, Generator, cast
 
 import pytest
 from hypothesis import Phase, given, settings
@@ -20,27 +20,32 @@ def get_credentials() -> tuple[str, str, str, str]:
 
 
 @pytest.fixture(scope="module")
-def live_sync_client() -> SyncClient:
+def live_sync_client() -> Generator[SyncClient, None, None]:
     credentials = get_credentials()
-    return RequestsClient(
+    client = RequestsClient(
         base_url=credentials[0],
         username=credentials[1],
         password=credentials[2],
         client_platform=credentials[3],
         verify_ssl=False,
     )
+    yield client
+    client.close()
 
 
-@pytest.fixture(scope="module")
-def live_async_client() -> AsyncClient:
+# Function scope is required here because of the event loop.
+@pytest.fixture(scope="function")
+async def live_async_client() -> AsyncGenerator[AsyncClient, None]:
     credentials = get_credentials()
-    return AioClient(
+    client = AioClient(
         base_url=credentials[0],
         username=credentials[1],
         password=credentials[2],
         client_platform=credentials[3],
         verify_ssl=False,
     )
+    yield client
+    await client.close()
 
 
 @st.composite
@@ -113,6 +118,7 @@ def test_crud(
     assert len(Lead.find(Lead.id == lead_id)) == 0
 
 
+@pytest.mark.asyncio
 async def test_bulk(live_async_client: AsyncClient) -> None:
     crm = live_async_client
 

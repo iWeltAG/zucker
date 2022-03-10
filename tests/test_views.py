@@ -151,7 +151,7 @@ def test_getting_id(fake_client: FakeClient) -> None:
         assert "slash" in str(error.value) or "space" in str(error.value)
 
 
-def test_getting_index(fake_client: FakeClient) -> None:
+def test_getting_offset(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
@@ -166,13 +166,17 @@ def test_getting_index(fake_client: FakeClient) -> None:
             elif offset == 8:
                 return {"records": [{"_module": "Demo", "id": "eight"}]}
         if (method, url) == ("get", "Demo/count"):
-            return {"record_count": 12}
+            return {"record_count": 10}
         return None
 
     fake_client.add_data_callback(handle)
     view = Demo.find()
 
     record = view[8]
+    assert isinstance(record, Demo)
+    assert record.get_data("id") == "eight"
+
+    record = view[-2]
     assert isinstance(record, Demo)
     assert record.get_data("id") == "eight"
 
