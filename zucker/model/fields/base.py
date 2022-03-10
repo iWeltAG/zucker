@@ -1,9 +1,22 @@
 from __future__ import annotations
 
 import abc
+import re
 from numbers import Number
 from typing import Awaitable  # noqa: F401
-from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from zucker.filtering import NegatableFilter, NullishFilter, NumericFilter, ValuesFilter
 from zucker.utils import ApiType, JsonType
@@ -29,7 +42,7 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
     module.
     """
 
-    def __init__(self, api_name: Optional[str] = None, **kwargs: Any):
+    def __init__(self, api_name: Optional[str] = None):
         self._api_name = api_name
         self._name: Optional[str] = "test"
         # Check the name to make sure it's valid.
@@ -159,7 +172,54 @@ class MutableField(
 
 
 class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], abc.ABC):
-    """Scalar fields are fields that also support some basic filtering operations."""
+    """Scalar fields are fields that also support some basic filtering operations.
+
+    :param validators: Validators can be provided to make sure that data meets
+        specific requirements. These will be checked both for incoming values from
+        the server and for any value that is set on the field, before writing
+        changes. A validator may either be a function or a regular expression
+        object. The former will be called with the value to be checked as the single
+        argument and should raise a :exc:`ValueError` when validation fails. The
+        latter will pass the check if the entire value matches the provided regular
+        expression.
+
+    .. note::
+        A few notes to keep in mind when using validators:
+
+        1. The default strategy for validating regular expressions will coerce the
+          incoming type to a string. That means that -- for example -- the number
+          ``0xff`` *will* match the expression ``2..``, because the string
+          reperesentation is ``255``.
+        2. Validators are always evaluated on the api data type. That means that they
+          are run *after* serializing any user input.
+    """
+
+    def __init__(
+        self,
+        api_name: Optional[str] = None,
+        *,
+        validators: Optional[
+            Sequence[Union[re.Pattern, Callable[[ApiType], None]]]
+        ] = None,
+    ):
+        super().__init__(api_name=api_name)
+
+        self._validators: List[Callable[[ApiType], None]] = []
+        for validator in validators or []:
+            if isinstance(validator, re.Pattern):
+
+                def validate(value: ApiType):
+                    if not validator.fullmatch(str(value)):
+                        raise ValueError(f"pattern did not match: {validator.pattern}")
+
+                self._validators.append(validate)
+            elif callable(validator):
+                self._validators.append(validator)
+            else:
+                raise TypeError(
+                    f"validators must be regular expression pattern objects or "
+                    f"callables, got {type(validator)!r}"
+                )
 
     ##################################
     # Getting / setting field values #
@@ -174,6 +234,8 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
                 f"{type(record)!r}. Either add the field to the module "
                 f"definition or check for the correct spelling."
             )
+        for validate in self._validators:
+            validate(raw_value)
         return self.load_value(raw_value)
 
     @abc.abstractmethod
@@ -290,6 +352,8 @@ class MutableScalarField(
 ):
     def _set_value(self, record: BaseModule, value: Union[ApiType, NativeType]) -> None:
         raw_value = self.serialize(value)
+        for validate in self._validators:
+            validate(raw_value)
         record._updated_data[self.name] = raw_value
 
 
