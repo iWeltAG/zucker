@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Union
+import enum  # noqa: F401
+from typing import Any, Generic, Optional, TypeVar, Union, Type
 from urllib import parse as urllib_parse
 from uuid import UUID
 
@@ -18,6 +19,7 @@ __all__ = [
     "LegacyEmailField",
     "StringField",
     "URLField",
+    "EnumField",
 ]
 
 
@@ -228,3 +230,47 @@ class IntegerField(MutableNumericField[int]):
     @staticmethod
     def serialize(value: int) -> int:
         return value
+
+
+EnumType = TypeVar("EnumType", bound="enum.Enum")
+
+
+class EnumField(Generic[EnumType], MutableScalarField[EnumType, Union[str, int, bool]]):
+    """Mutable field that represents *Dropdown* Sugar fields.
+
+    :param enum: Pass an :class:`enum.Enum` type that represents the options for this
+        field. This enum must have a non-null member named ``DEFAULT``. Further,
+        elements should be strings (unless otherwise specified on the server side).
+    """
+
+    def __init__(
+        self, enum: Type[EnumType], /, api_name: Optional[str] = None, **kwargs: Any
+    ):
+        try:
+            assert enum["DEFAULT"] is not None
+            has_default = True
+        except (AssertionError, KeyError):
+            has_default = False
+        if not has_default:
+            raise ValueError(
+                "Cannot initialize an EnumField with an enum that does not have a "
+                "default value. Make sure the enumeration contains a member named "
+                "DEFAULT that is not None."
+            )
+
+        self._enum = enum
+        super().__init__(api_name, **kwargs)
+
+    def load_value(self, raw_value: JsonType) -> EnumType:
+        if not isinstance(raw_value, (str, int, bool)):
+            raise TypeError(
+                f"integer field must be populated with an integer, string or boolean - "
+                f"got {type(raw_value)!r}"
+            )
+        try:
+            return self._enum(raw_value)
+        except ValueError:
+            return self._enum["DEFAULT"]
+
+    def serialize(self, enum_value: EnumType) -> Union[str, int, bool]:
+        return enum_value.value

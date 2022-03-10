@@ -68,7 +68,7 @@ URLs
 
 URLs can be accessed with this field:
 
-.. autoclass:: zucker.model.FloatField
+.. autoclass:: zucker.model.URLField
   :members:
   :exclude-members: load_value, serialize
 
@@ -97,6 +97,41 @@ Zucker currently only supports the legacy API through this field:
         email1 = model.LegacyEmailField()
         email2 = model.LegacyEmailField()
 
+Enumerations
+~~~~~~~~~~~~
+
+The Sugar Studio allows to define fields of a type called *Dropdown*.
+This field type allows users to select exactly one out of a predefined set of values.
+Zucker maps these fields to Python's :module:`enum` types:
+
+.. autoclass:: zucker.model.EnumField
+  :members:
+  :exclude-members: load_value, serialize
+
+  Define an enum and use the field like this:
+
+  .. code-block:: python
+
+    import enum
+
+    class LeadSource(enum.Enum):
+      DEFAULT = ""
+      OTHER = "Other"
+      EXISTING_CUSTOMER = "Existing Customer"
+      DIRECT_MAIL = "Direct Mail"
+      COLD_CALL = "Cold Call"
+      WORD_OF_MOUTH = "Word of mouth"
+      # ...
+
+    class Lead(model.UnboundModule):
+        lead_source = model.EnumField(LeadSource)
+
+  Again, note the ``DEFAULT`` field.
+
+.. note::
+  In the metadata API, Sugar represents these fields with the additional
+  parameter ``options``. Other than that, enumerations are regular text fields.
+
 IDs
 ~~~
 
@@ -105,6 +140,8 @@ Record IDs can be accessed using fields of this type:
 .. autoclass:: zucker.model.IdField
   :members:
   :exclude-members: load_value, serialize
+
+Note that modules automatically receive a field of this type with the name ``id``.
 
 Relationships
 -------------
