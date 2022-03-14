@@ -26,13 +26,14 @@ if TYPE_CHECKING:
 
 
 NativeType = TypeVar("NativeType")
-SyncGetType = TypeVar("SyncGetType")
-AsyncGetType = TypeVar("AsyncGetType")
+GetType = TypeVar("GetType")
+ModuleType = TypeVar("ModuleType", bound="BaseModule")
 SetType = TypeVar("SetType")
-Self = TypeVar("Self", bound="Field[Any, Awaitable[Any]]")
+Self = TypeVar("Self", bound="Field[Any, Any]")
+AnyModule = Union["SyncModule", "AsyncModule", "UnboundModule"]
 
 
-class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
+class Field(Generic[ModuleType, GetType], abc.ABC):
     """Base class for all fields.
 
     This class accepts type variables which resemble the native type that is returned
@@ -49,27 +50,13 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
         self.name  # noqa
         self._name = None
 
-    def __set_name__(self, owner: BaseModule, name: str) -> None:
+    def __set_name__(self, owner: ModuleType, name: str) -> None:
         self._name = name
         # Check the name to make sure it's valid.
         self.name  # noqa
 
     @overload
-    def __get__(
-        self: Self, instance: SyncModule, owner: Type[BaseModule]
-    ) -> SyncGetType:
-        ...
-
-    @overload
-    def __get__(
-        self: Self, instance: AsyncModule, owner: Type[BaseModule]
-    ) -> AsyncGetType:
-        ...
-
-    @overload
-    def __get__(
-        self: Self, instance: UnboundModule, owner: Type[BaseModule]
-    ) -> SyncGetType:
+    def __get__(self: Self, instance: ModuleType, owner: Type[BaseModule]) -> GetType:
         ...
 
     @overload
@@ -78,9 +65,9 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
 
     def __get__(
         self: Self,
-        instance: Union[SyncModule, AsyncModule, UnboundModule, None],
+        instance: Union[ModuleType, None],
         owner: Type[BaseModule],
-    ) -> Union[SyncGetType, AsyncGetType, Self]:
+    ) -> Union[GetType, Self]:
         from ..module import BaseModule
 
         if isinstance(instance, BaseModule):
@@ -93,7 +80,7 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
             # self._get_value() is actually an Any (since self is a 'Self' which is
             # Field[Any] or some subtype).
             # See also: https://github.com/python/mypy/issues/2354
-            return value  # type:ignore
+            return value  # type: ignore
         elif instance is None:
             # The other case is when the field gets referenced directly on the class,
             # for example when building queries:
@@ -127,28 +114,14 @@ class Field(Generic[SyncGetType, AsyncGetType], abc.ABC):
 
         return result
 
-    @overload
-    def _get_value(self, record: SyncModule) -> SyncGetType:
-        ...
-
-    @overload
-    def _get_value(self, record: AsyncModule) -> AsyncGetType:
-        ...
-
-    @overload
-    def _get_value(self, record: UnboundModule) -> SyncGetType:
-        ...
-
     @abc.abstractmethod
-    def _get_value(
-        self, record: Union[SyncModule, AsyncModule, UnboundModule]
-    ) -> Union[SyncGetType, AsyncGetType]:
+    def _get_value(self, record: ModuleType) -> GetType:
         ...
 
 
 class MutableField(
-    Generic[SyncGetType, AsyncGetType, SetType],
-    Field[SyncGetType, AsyncGetType],
+    Generic[ModuleType, GetType, SetType],
+    Field[ModuleType, GetType],
     abc.ABC,
 ):
     """Base class for fields that are mutable.
@@ -159,7 +132,7 @@ class MutableField(
     return native date objects but additionally accept strings for setting.
     """
 
-    def __set__(self, instance: BaseModule, value: SetType) -> None:
+    def __set__(self, instance: ModuleType, value: SetType) -> None:
         from ..module import BaseModule
 
         if not isinstance(instance, BaseModule):
@@ -167,11 +140,15 @@ class MutableField(
         self._set_value(instance, value)
 
     @abc.abstractmethod
-    def _set_value(self, record: BaseModule, value: SetType) -> None:
+    def _set_value(self, record: ModuleType, value: SetType) -> None:
         ...
 
 
-class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], abc.ABC):
+class ScalarField(
+    Generic[NativeType, ApiType],
+    Field[AnyModule, NativeType],
+    abc.ABC,
+):
     """Scalar fields are fields that also support some basic filtering operations.
 
     :param validators: Validators can be provided to make sure that data meets
@@ -199,7 +176,7 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
         api_name: Optional[str] = None,
         *,
         validators: Optional[
-            Sequence[Union[re.Pattern, Callable[[ApiType], None]]]
+            Sequence[Union[re.Pattern[str], Callable[[ApiType], None]]]
         ] = None,
     ):
         super().__init__(api_name=api_name)
@@ -208,7 +185,8 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
         for validator in validators or []:
             if isinstance(validator, re.Pattern):
 
-                def validate(value: ApiType):
+                def validate(value: ApiType) -> None:
+                    assert isinstance(validator, re.Pattern)
                     if not validator.fullmatch(str(value)):
                         raise ValueError(f"pattern did not match: {validator.pattern}")
 
@@ -235,7 +213,7 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
                 f"definition or check for the correct spelling."
             )
         for validate in self._validators:
-            validate(raw_value)
+            validate(raw_value)  # type: ignore
         return self.load_value(raw_value)
 
     @abc.abstractmethod
@@ -346,8 +324,12 @@ class ScalarField(Generic[NativeType, ApiType], Field[NativeType, NativeType], a
 class MutableScalarField(
     Generic[NativeType, ApiType],
     ScalarField[NativeType, ApiType],
-    # Setting is supported by both the API type and the native type.
-    MutableField[NativeType, NativeType, Union[NativeType, ApiType]],
+    MutableField[
+        AnyModule,
+        NativeType,
+        # Setting is supported by both the API type and the native type.
+        Union[NativeType, ApiType],
+    ],
     abc.ABC,
 ):
     def _set_value(self, record: BaseModule, value: Union[ApiType, NativeType]) -> None:

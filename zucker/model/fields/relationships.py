@@ -1,21 +1,143 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Type, Union, cast, overload
+import abc
+from typing import TYPE_CHECKING, Any, Generic, Type, Union, overload
 
 from ...exceptions import WrongClientError, WrongParadigmError
 from ..view import AsyncModuleType, AsyncView, SyncModuleType, SyncView
-from .base import Field
+from .base import Field, GetType, ModuleType
 
 if TYPE_CHECKING:
-    from ..module import AsyncModule, SyncModule, UnboundModule
+    from ..module import AsyncModule, SyncModule
 
 __all__ = ["RelatedField"]
 
 
-class RelatedField(
-    Generic[SyncModuleType, AsyncModuleType],
-    Field[SyncView[SyncModuleType], AsyncView[AsyncModuleType]],
+class BaseRelatedField(
+    Generic[ModuleType, GetType], Field[ModuleType, GetType], abc.ABC
 ):
+    def __init__(
+        self,
+        link_name: str,
+    ):
+        if not isinstance(link_name, str):
+            raise TypeError("related link names must be strings")
+        link_name = link_name.strip()
+        if len(link_name) == 0:
+            raise ValueError("related link names must be non-empty")
+        self._link_name = link_name
+
+        super().__init__()
+
+
+class SyncRelatedField(
+    Generic[SyncModuleType], BaseRelatedField["SyncModule", SyncView[SyncModuleType]]
+):
+    def __init__(
+        self,
+        related_module: Type[SyncModuleType],
+        link_name: str,
+    ):
+        from ..module import SyncModule
+
+        if not issubclass(related_module, SyncModule):
+            raise WrongParadigmError(
+                f"cannot build a SyncRelatedField from non-synchronous type: "
+                f"{related_module}"
+            )
+        self._related_module = related_module
+
+        super().__init__(link_name)
+
+    def _get_value(self, record: SyncModule) -> SyncView[SyncModuleType]:
+        from ..module import SyncModule
+
+        if not isinstance(record, SyncModule):
+            raise WrongParadigmError(
+                f"Cannot instantiate a synchronous record of type "
+                f"{self._related_module!r} from a related field on the non-synchronous "
+                f"module {type(record)!r}. If this module has multiple variations on "
+                f"different clients, consider refactoring common parts into an "
+                f"UnboundModule subclass and re-implementing related fields with the "
+                f"correct targets in each subclass."
+            )
+
+        if record.get_client() is not self._related_module.get_client():
+            raise WrongClientError()
+
+        key = record.get_data("id")
+        if key is None:
+            raise ValueError("unable to retrieve key for related lookup")
+
+        return SyncView(
+            self._related_module,
+            f"{record._api_name}/{key}/link/{self._link_name}",
+        )
+
+
+class AsyncRelatedField(
+    Generic[AsyncModuleType],
+    BaseRelatedField["AsyncModule", AsyncView[AsyncModuleType]],
+):
+    def __init__(
+        self,
+        related_module: Type[AsyncModuleType],
+        link_name: str,
+    ):
+        from ..module import AsyncModule
+
+        if not issubclass(related_module, AsyncModule):
+            raise WrongParadigmError(
+                f"cannot build an AsyncRelatedField from non-asynchronous type: "
+                f"{related_module}"
+            )
+        self._related_module = related_module
+
+        super().__init__(link_name)
+
+    def _get_value(self, record: AsyncModule) -> AsyncView[AsyncModuleType]:
+        from ..module import AsyncModule
+
+        if not isinstance(record, AsyncModule):
+            raise WrongParadigmError(
+                f"Cannot instantiate an asynchronous record of type "
+                f"{self._related_module!r} from a related field on the "
+                f"non-asynchronous module {type(record)!r}. If this module has "
+                f"multiple variations on different clients, consider refactoring "
+                f"common parts into an UnboundModule subclass and re-implementing "
+                f"related fields with the correct targets in each subclass."
+            )
+
+        if record.get_client() is not self._related_module.get_client():
+            raise WrongClientError()
+
+        key = record.get_data("id")
+        if key is None:
+            raise ValueError("unable to retrieve key for related lookup")
+
+        return AsyncView(
+            self._related_module,
+            f"{record._api_name}/{key}/link/{self._link_name}",
+        )
+
+
+@overload
+def RelatedField(
+    related_module: Type[SyncModuleType], link_name: str
+) -> SyncRelatedField[SyncModuleType]:
+    ...
+
+
+@overload
+def RelatedField(
+    related_module: Type[AsyncModuleType], link_name: str
+) -> AsyncRelatedField[AsyncModuleType]:
+    ...
+
+
+def RelatedField(
+    related_module: Union[Type[SyncModule], Type[AsyncModule]], link_name: str
+) -> Union[SyncRelatedField[Any], AsyncRelatedField[Any]]:
     """Field that returns a view on a relationship link.
 
     :param related_module: The module type on the other side of the relationship.
@@ -26,95 +148,15 @@ class RelatedField(
       same client as the module the field is attached to. You can't mix synchronous and
       asynchronous models here.
     """
+    from ..module import AsyncModule, SyncModule
 
-    def __init__(
-        self,
-        related_module: Union[Type[SyncModuleType], Type[AsyncModuleType]],
-        link_name: str,
-        **kwargs: Any,
-    ):
-        from ..module import AsyncModule, BaseModule, SyncModule
-
-        if not issubclass(related_module, (SyncModule, AsyncModule)):
-            if issubclass(related_module, BaseModule):  # type: ignore
-                raise TypeError(
-                    f"related fields must be initialized with a bound module - got the "
-                    f"unbound variant {related_module!r}"
-                )
-            else:
-                raise TypeError("a related module must be provided")
-        if not isinstance(link_name, str):
-            raise TypeError("related link names must be strings")
-        link_name = link_name.strip()
-        if len(link_name) == 0:
-            raise ValueError("related link names must be non-empty")
-
-        super().__init__(**kwargs)
-        self._related_module: Union[
-            Type[SyncModuleType], Type[AsyncModuleType]
-        ] = related_module
-        self._link_name = link_name
-
-    @overload
-    def _get_value(self, record: SyncModule) -> SyncView[SyncModuleType]:
-        ...
-
-    @overload
-    def _get_value(self, record: AsyncModule) -> AsyncView[AsyncModuleType]:
-        ...
-
-    @overload
-    def _get_value(self, record: UnboundModule) -> SyncView[SyncModuleType]:
-        ...
-
-    def _get_value(
-        self, record: Union[SyncModule, AsyncModule, UnboundModule]
-    ) -> Union[SyncView[SyncModuleType], AsyncView[AsyncModuleType]]:
-        from ..module import AsyncModule, BoundModule, SyncModule
-
-        if not isinstance(record, BoundModule):
-            raise TypeError("felated fields can only be accessed on bound modules")
-
-        key = record.get_data("id")
-        if key is None:
-            raise ValueError("unable to retrieve key for related lookup")
-
-        if record.get_client() is not self._related_module.get_client():
-            raise WrongClientError(
-                "Related field was accessed from a different client that the defined "
-                "module. Make sure that both the module the field is defined in as "
-                "as the referring module are bound to the same client."
-            )
-
-        if isinstance(record, SyncModule):
-            if not issubclass(self._related_module, SyncModule):
-                raise WrongParadigmError(
-                    f"Cannot instantiate a non-synchronous record of type "
-                    f"{self._related_module!r} from a related field on a synchronous "
-                    f"module. If this module has multiple variations on different "
-                    f"clients, consider refactoring common parts into a BaseModule "
-                    f"subclass and re-implementing related fields with the correct "
-                    f"targets in each subclass."
-                )
-            return SyncView(
-                cast(Type[SyncModuleType], self._related_module),
-                f"{record._api_name}/{key}/link/{self._link_name}",
-            )
-        elif isinstance(record, AsyncModule):
-            if not issubclass(self._related_module, AsyncModule):
-                raise WrongParadigmError(
-                    f"Cannot instantiate a non-asynchronous record of type "
-                    f"{self._related_module!r} from a related field on an asynchronous "
-                    f"module. If this module has multiple variations on different "
-                    f"clients, consider refactoring common parts into a BaseModule "
-                    f"subclass and re-implementing related fields with the correct "
-                    f"targets in each subclass."
-                )
-            return AsyncView(
-                cast(Type[AsyncModuleType], self._related_module),
-                f"{record._api_name}/{key}/link/{self._link_name}",
-            )
-        else:
-            raise TypeError(
-                f"expecting a synchronous or asynchronous record, got {type(record)!r}"
-            )
+    if issubclass(related_module, SyncModule):
+        return SyncRelatedField(related_module, link_name)
+    elif issubclass(related_module, AsyncModule):
+        return AsyncRelatedField(related_module, link_name)
+    else:
+        raise TypeError(
+            f"Cannot construct a related field from type {related_module!r}. "
+            f"It must be initialized with a bound module - either a SyncModule or "
+            f"an AsyncModule subclass."
+        )

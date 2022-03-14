@@ -1,5 +1,3 @@
-from typing import Any
-
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -13,8 +11,7 @@ from zucker.model import (
     SyncModule,
     UnboundModule,
 )
-from zucker.model.fields.base import MutableField
-from zucker.model.module import BaseModule
+from zucker.model.fields.base import AnyModule, MutableField
 from zucker.model.view import SyncView
 
 
@@ -23,11 +20,11 @@ def client() -> SyncClient:
     return RequestsClient("localhost", "u", "p")
 
 
-class DemoField(MutableField[str, str, str]):
-    def _get_value(self, record: BaseModule) -> str:
+class DemoField(MutableField[AnyModule, str, str]):
+    def _get_value(self, record: AnyModule) -> str:
         return "strawberry"
 
-    def _set_value(self, record: BaseModule, value: str) -> None:
+    def _set_value(self, record: AnyModule, value: str) -> None:
         if value != "raspberry":
             raise ValueError("must set 'raspberry'")
 
@@ -82,14 +79,14 @@ def test_related_field_initialization(client: SyncClient) -> None:
         RelatedField(BaseDemo, "demo")  # type: ignore
     for link_name in ("", "   "):
         with pytest.raises(ValueError, match="related link names"):
-            RelatedField[Demo, Any](Demo, link_name)
+            RelatedField(Demo, link_name)
 
 
 def test_related_view_building(client: SyncClient) -> None:
     class Demo(SyncModule, BaseDemo, client=client):
         pass
 
-    field = RelatedField[Demo, Any](Demo, "some_link")
+    field = RelatedField(Demo, "some_link")
     with pytest.raises(ValueError):
         field._get_value(Demo())
     result = field._get_value(Demo(id="the_id"))

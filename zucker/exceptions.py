@@ -1,7 +1,5 @@
 from typing import Any
 
-from .utils import JsonMapping
-
 
 class ZuckerException(Exception):
     """Base class for all errors raised by Zucker."""
@@ -13,6 +11,13 @@ class WrongParadigmError(ZuckerException):
 
 class WrongClientError(ZuckerException):
     """Raised when an operation receives an unexpected client instance."""
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(
+            "Related field was accessed from a different client that the defined "
+            "module. Make sure that both the module the field is defined in as the "
+            "referring module are bound to the same client."
+        )
 
 
 class SugarError(ZuckerException):
