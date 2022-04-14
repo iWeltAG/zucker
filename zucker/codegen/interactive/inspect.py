@@ -85,7 +85,7 @@ def format_module(module: InspectedModule) -> str:
 def run_inspect(client: SyncClient, **kwargs: None) -> None:
     client.fetch_metadata("modules")
     modules_metadata = client.get_metadata_item("modules")
-    modules = inspect_modules_with_fields(modules_metadata)
+    modules = inspect_modules_with_fields(modules_metadata, client)
 
     for module in sorted(modules, key=lambda module: module.name):
         print(format_module(module))

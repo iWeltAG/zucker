@@ -6,7 +6,7 @@ from urllib import parse as urllib_parse
 from uuid import UUID
 
 from zucker import filtering
-from zucker.codegen.inspection import field_for_metadata
+from zucker.codegen.inspection import field_for_metadata, inspect_enum
 from zucker.utils import JsonType
 
 from .base import MutableNumericField, MutableScalarField, ScalarField
@@ -235,6 +235,11 @@ class IntegerField(MutableNumericField[int]):
 EnumType = TypeVar("EnumType", bound="enum.Enum")
 
 
+@field_for_metadata.register(
+    metadata_attributes=dict(type="enum"),
+    require_db=True,
+    output_arguments=inspect_enum,
+)
 class EnumField(Generic[EnumType], MutableScalarField[EnumType, Union[str, int, bool]]):
     """Mutable field that represents *Dropdown* Sugar fields.
 

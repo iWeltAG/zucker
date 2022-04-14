@@ -16,8 +16,9 @@ from typing import (
     cast,
 )
 
+from zucker.client import SyncClient
 from zucker.exceptions import InvalidSugarResponseError
-from zucker.utils import JsonMapping, JsonPrimitive, JsonType
+from zucker.utils import JsonMapping, JsonPrimitive, JsonType, check_json_mapping
 
 if TYPE_CHECKING:
     from zucker.model.fields.base import Field
@@ -57,8 +58,35 @@ class InspectedField:
 
 @dataclass
 class FieldInspectionContext:
+    module_name: str
+    field_name: str
     field_metadata: JsonMapping
     modules: Mapping[str, InspectedModule]
+    client: SyncClient
+
+
+class EnumRepr:
+    def __init__(self, name: str, values: Sequence[str]):
+        self._repr = f"enum.Enum({repr(name)}, {repr(values)})"
+
+    def __repr__(self) -> str:
+        return self._repr
+
+
+def inspect_enum(context: FieldInspectionContext) -> Mapping[str, Any]:
+    enum_data = context.client.request(
+        "get", f"{context.module_name}/enum/{context.field_name}"
+    )
+    try:
+        check_json_mapping(enum_data)
+    except TypeError as error:
+        raise InvalidSugarResponseError("got invalid enum schema from Sugar") from error
+
+    return {
+        "enum": EnumRepr(
+            f"{context.module_name}_{context.field_name}", list(enum_data.keys())
+        )
+    }
 
 
 class FieldMetadataRegistry:
@@ -196,7 +224,7 @@ field_for_metadata = FieldMetadataRegistry()
 
 
 def inspect_modules_with_fields(
-    modules_metadata: JsonMapping,
+    modules_metadata: JsonMapping, client: SyncClient
 ) -> Sequence[InspectedModule]:
     # TODO Convert these to actual type guards:
 
@@ -243,8 +271,11 @@ def inspect_modules_with_fields(
                 )
 
             inspect_context = FieldInspectionContext(
+                module_name=module_name,
+                field_name=field_name,
                 field_metadata=field_metadata,
                 modules=modules,
+                client=client,
             )
             inspect_result = field_for_metadata(inspect_context)
             if inspect_result is None:
