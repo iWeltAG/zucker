@@ -166,7 +166,7 @@ class ScalarField(
         1. The default strategy for validating regular expressions will coerce the
           incoming type to a string. That means that -- for example -- the number
           ``0xff`` *will* match the expression ``2..``, because the string
-          reperesentation is ``255``.
+          representation is ``255``.
         2. Validators are always evaluated on the api data type. That means that they
           are run *after* serializing any user input.
     """
