@@ -17,7 +17,7 @@ Once that is done, you can use access your records much like a list or another d
 
 .. code-block:: python
 
-  from zucker.synchronous import model, RequestsClient
+  from zucker import model, RequestsClient
 
   # This client will use the 'requests' module as an HTTP transport library.
   # There are more to choose from here!
@@ -52,7 +52,7 @@ Here is the same code as above, but with an asynchronous stack:
 .. code-block:: python
 
   import asyncio
-  from zucker.asynchronous import model, AioClient
+  from zucker import model, AioClient
 
   # Same as before, only we now use an asynchronous client. This one uses
   # aiohttp as the backend.

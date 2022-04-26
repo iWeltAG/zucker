@@ -68,7 +68,7 @@ reasons:
 
 You can name the class whatever you want, but make sure the name in the generic
 (square brackets) matches the name of the class. In case you are not using
-Python :module:`typing`, you can also leave out the generic entirely.
+Python :mod:`typing`, you can also leave out the generic entirely.
 
 If the class has a different name as the corresponding Sugar module, you need to
 provide the latter as an `api_name` parameter. This will mostly be the case for

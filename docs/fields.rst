@@ -102,7 +102,7 @@ Enumerations
 
 The Sugar Studio allows to define fields of a type called *Dropdown*.
 This field type allows users to select exactly one out of a predefined set of values.
-Zucker maps these fields to Python's :module:`enum` types:
+Zucker maps these fields to Python's :mod:`enum` types:
 
 .. autoclass:: zucker.model.EnumField
   :members:
