@@ -45,6 +45,17 @@ Again, see the
 [Documentation](https://iweltag.github.io/zucker/) for
 more examples.
 
+## Introspection
+
+Zucker also supports introspecting a server, which will list the available modules and fields.
+Use it like this:
+
+```shell
+$ python -m zucker.codegen -b "https://crm.example.com" -u "username" -c "my_client" -P inspect
+```
+
+See `python -m zucker.codegen --help` for detailed usage information.
+
 ## License
 
 [MIT](https://github.com/iWeltAG/zucker/blob/main/LICENSE)
