@@ -179,7 +179,7 @@ def test_authentication_and_request(fake_server: FakeServer) -> None:
 
     # The following statement would be unreachable because of the two
     # client.authenticated assertions above.
-    with pytest.raises(SugarError) as error:  # type: ignore
+    with pytest.raises(SugarError) as error:
         client.request("get", "errorroute")
     assert error.value.status_code == 500
     assert "theerror" in str(error)

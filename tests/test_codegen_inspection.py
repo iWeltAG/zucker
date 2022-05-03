@@ -118,10 +118,13 @@ def test_indenting(lines: list[str]) -> None:
 @given(inspected_scalar_fields())
 def test_field_resolving(inspected_field: InspectedField) -> None:
     context = FieldInspectionContext(
+        module_name="Module",
+        field_name=inspected_field.name,
         # Here, the metadata object from the generated inspection result is used to see
         # if an actual inspection yields the same result.
         field_metadata=inspected_field.raw_metadata,
         modules={},
+        client=None,  # type: ignore
     )
     result = field_for_metadata(context)
     assert result is not None
@@ -133,7 +136,10 @@ def test_field_resolving(inspected_field: InspectedField) -> None:
 def test_module_inspection(module: InspectedModule) -> None:
     metadata = {"modules": {module.name: module.raw_metadata}}
 
-    inspection_result = inspect_modules_with_fields(metadata["modules"])
+    inspection_result = inspect_modules_with_fields(
+        metadata["modules"],
+        None,  # type: ignore
+    )
     assert len(inspection_result) == 1
     inspected_module = inspection_result[0]
     assert inspected_module == module
