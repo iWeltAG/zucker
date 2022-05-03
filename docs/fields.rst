@@ -58,7 +58,7 @@ Depending on the type of number stored, use one of these two fields:
 
 Both of these fields share an API for filtering:
 
-.. autoclass:: zucker.model.fields.base.MutableNumericField
+.. autoclass:: zucker.model.fields.base.NumericField
   :members:
   :special-members: __lt__, __lte__, __gt__, __gte__
   :exclude-members: load_value, serialize
@@ -155,3 +155,49 @@ In Zucker, use this field to access a link:
 
 .. autoclass:: zucker.model.RelatedField
   :members:
+
+Implementing fields
+-------------------
+
+Next to the already mentioned :class:`~zucker.model.fields.base.ScalarField` and :class:`~zucker.model.fields.base.NumericField`, there are also other base classes available to use when implementing custom field types.
+In fact, most of the above scalar fields above actually implement the mutable variants:
+
+.. autoclass:: zucker.model.fields.base.MutableScalarField
+  :members:
+
+.. autoclass:: zucker.model.fields.base.MutableNumericField
+  :members:
+
+A field being mutable means that when a field ``name`` is used on a ``Record`` record type, both of the following will work:
+
+.. code-block:: python
+
+    the_name = record.name  # Get the name of a record object
+    record.name = "New Name"  # Set a new value
+
+To implement a scalar field, choose and applicable superclass and override it.
+Scalar fields require two generic arguments - native type and an API type.
+The latter is the type of data the Sugar API returns for the field and should be a JSON type.
+Normally, this will be one of the JSON-native scalars :class:`str`, :class:`int`, :class:`float` or :class:`bool`.
+The native type may be the same, but can also be something different.
+This is the rich Python type that the API response gets converted into.
+A typical example here is for dates, which are typically encoded as strings and returned as native :class:`~datetime.datetime` objects.
+
+To handle this conversion, you will need to implement these two methods on the new field class:
+
+.. automethod:: zucker.model.fields.base.ScalarField.load_value
+.. automethod:: zucker.model.fields.base.ScalarField.serialize
+
+.. note::
+  When setting the value of a mutable field, you can provide both the native as well as the API type.
+  For a hypothetical ``BirdField`` field on a ``Zoo`` model, this would both be possible:
+
+  >>> the_bird = zoo.bird
+  >>> the_bird
+  <Bird object at ...>
+  >>> zoo.bird = the_bird  # Set the field value using the native data type
+  >>> zoo.bird = "zazu"  # Set the field value using the API type (assuming birds serialize to strings)
+
+  This is why the :meth:`~zucker.model.fields.base.ScalarField.serialize` takes both input types.
+
+Numeric fields only have one generic argument, as the native and API types are assumed to be the same.

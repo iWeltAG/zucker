@@ -163,12 +163,8 @@ class ScalarField(
     .. note::
         A few notes to keep in mind when using validators:
 
-        1. The default strategy for validating regular expressions will coerce the
-          incoming type to a string. That means that -- for example -- the number
-          ``0xff`` *will* match the expression ``2..``, because the string
-          representation is ``255``.
-        2. Validators are always evaluated on the api data type. That means that they
-          are run *after* serializing any user input.
+        1. The default strategy for validating regular expressions will coerce the incoming type to a string. That means that -- for example -- the number ``0xff`` *will* match the expression ``2..``, because the string representation is ``255``.
+        2. Validators are always evaluated on the api data type. That means that they are run *after* serializing any user input.
     """
 
     def __init__(
@@ -231,8 +227,11 @@ class ScalarField(
         """Serialize a native data type into something the API can take back for
         saving.
 
-        Note: this method also supports "serializing" api types, which generally should
-        just verify their validity and return them as-is.
+        This method also supports "serializing" api types. In this case implementors are
+        advised to verify the input's validity and return it as-is.
+
+        :param value: Native or API data type for this field.
+        :returns: An API-compatible data type.
         """
 
     ###################
@@ -332,6 +331,8 @@ class MutableScalarField(
     ],
     abc.ABC,
 ):
+    """Mutable version of :class:`ScalarField`."""
+
     def _set_value(self, record: BaseModule, value: Union[ApiType, NativeType]) -> None:
         raw_value = self.serialize(value)
         for validate in self._validators:
@@ -339,37 +340,42 @@ class MutableScalarField(
         record._updated_data[self.name] = raw_value
 
 
-class MutableNumericField(
-    Generic[ApiType], MutableScalarField[ApiType, ApiType], abc.ABC
-):
-    def __lt__(self, other: Number) -> NumericFilter:
-        """Filter for values less than the specified scalar.
+class NumericField(Generic[ApiType], ScalarField[ApiType, ApiType], abc.ABC):
+    """Scalar field with filtering operators that produce a total ordering."""
 
-        :param other: Only records with a field value less than this value will be
-            included.
+    def __lt__(self, other: Number) -> NumericFilter:
+        """Filter for values less than the specified scalar:
+
+        >>> Person.age < 10
         """
         return NumericFilter(self.name, other, greater=False, equal=False)
 
     def __lte__(self, other: Number) -> NumericFilter:
-        """Filter for values less than or equal to the specified scalar.
+        """Filter for values less than or equal to the specified scalar:
 
-        :param other: Only records with a field value less than or equal to this value
-            will be included.
+        >>> Person.age <= 18
         """
         return NumericFilter(self.name, other, greater=False, equal=True)
 
     def __gt__(self, other: Number) -> NumericFilter:
-        """Filter for values less than the specified scalar.
+        """Filter for values less than the specified scalar:
 
-        :param other: Only records with a field value greater than this value will be
-            included.
+        >>> Person.age > 60
         """
         return NumericFilter(self.name, other, greater=True, equal=False)
 
     def __gte__(self, other: Number) -> NumericFilter:
-        """Filter for values greater than or equal to the specified scalar.
+        """Filter for values greater than or equal to the specified scalar:
 
-        :param other: Only records with a field value greater than or equal to this
-            value will be included.
+        >>> Person.age >= 21
         """
         return NumericFilter(self.name, other, greater=True, equal=True)
+
+
+class MutableNumericField(
+    Generic[ApiType],
+    NumericField[ApiType],
+    MutableScalarField[ApiType, ApiType],
+    abc.ABC,
+):
+    """Mutable version of :class:`NumericField`."""

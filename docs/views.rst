@@ -58,6 +58,11 @@ Alternative to the array syntax, you can also use the
 :meth:`~zucker.model.view.View.get_by_id` methods.
 Both raise errors (:exc:`IndexError` or :exc:`KeyError`) when no matching record is found.
 
+To get the size of a view, use :func:`len` or :meth:`~zucker.model.view.AsyncView.length`, depending on the paradigm:
+
+  >>> len(view)
+  >>> await async_view.length()
+
 Iteration
 ~~~~~~~~~
 
