@@ -50,7 +50,7 @@
     in
     rec {
       packages = {
-        inherit (python.pkgs) zucker;
+        default = python.pkgs.zucker;
 
         devEnv = python.withPackages(ps: with ps; [
           # Optional runtime dependencies
@@ -66,7 +66,7 @@
         ]);
 
         docs = pkgs.stdenv.mkDerivation {
-          inherit (packages.zucker) version src;
+          inherit (packages.default) version src;
           pname = "zucker-docs";
 
           buildInputs = [
@@ -84,11 +84,10 @@
           '';
         };
       };
-      defaultPackage = packages.zucker;
 
       checks = let
        mkCheckDerivation = definition: pkgs.stdenv.mkDerivation ({
-           inherit (packages.zucker) version src;
+           inherit (packages.default) version src;
            dontBuild = true;
            doCheck = true;
            installPhase = ''
@@ -124,7 +123,7 @@
         };
       };
 
-      devShell = packages.devEnv.env;
+      devShells.default = packages.devEnv.env;
     }
   ));
 }
