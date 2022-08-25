@@ -94,7 +94,9 @@ class FilterSet:
             second, (GenericFilter, Mapping)
         ):
             return FilterSet(combinator, first, second)
-        return NotImplemented
+        # Even though this branch isn't reachable in properly type-checked environments,
+        # other executions will probably still want the NotImplemented.
+        return NotImplemented  # type: ignore
 
     def build_filter(self) -> JsonMapping:
         return {

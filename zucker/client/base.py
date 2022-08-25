@@ -10,6 +10,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Coroutine,
     Iterator,
     Literal,
     Mapping,
@@ -476,21 +477,21 @@ class AsyncClient(BaseClient):
     # https://github.com/python/typeshed/blob/master/stdlib/asyncio/tasks.pyi#L44-L47
 
     @overload
-    async def bulk(self, action_1: Awaitable[_T1], /) -> tuple[_T1]:
+    async def bulk(self, action_1: Coroutine[Any, Any, _T1], /) -> tuple[_T1]:
         ...
 
     @overload
     async def bulk(
-        self, action_1: Awaitable[_T1], action_2: Awaitable[_T2], /
+        self, action_1: Coroutine[Any, Any, _T1], action_2: Coroutine[Any, Any, _T2], /
     ) -> tuple[_T1, _T2]:
         ...
 
     @overload
     async def bulk(
         self,
-        action_1: Awaitable[_T1],
-        action_2: Awaitable[_T2],
-        action_3: Awaitable[_T3],
+        action_1: Coroutine[Any, Any, _T1],
+        action_2: Coroutine[Any, Any, _T2],
+        action_3: Coroutine[Any, Any, _T3],
         /,
     ) -> tuple[_T1, _T2, _T3]:
         ...
@@ -498,10 +499,10 @@ class AsyncClient(BaseClient):
     @overload
     async def bulk(
         self,
-        action_1: Awaitable[_T1],
-        action_2: Awaitable[_T2],
-        action_3: Awaitable[_T3],
-        action_4: Awaitable[_T4],
+        action_1: Coroutine[Any, Any, _T1],
+        action_2: Coroutine[Any, Any, _T2],
+        action_3: Coroutine[Any, Any, _T3],
+        action_4: Coroutine[Any, Any, _T4],
         /,
     ) -> tuple[_T1, _T2, _T3, _T4]:
         ...
@@ -509,11 +510,11 @@ class AsyncClient(BaseClient):
     @overload
     async def bulk(
         self,
-        action_1: Awaitable[_T1],
-        action_2: Awaitable[_T2],
-        action_3: Awaitable[_T3],
-        action_4: Awaitable[_T4],
-        action_5: Awaitable[_T5],
+        action_1: Coroutine[Any, Any, _T1],
+        action_2: Coroutine[Any, Any, _T2],
+        action_3: Coroutine[Any, Any, _T3],
+        action_4: Coroutine[Any, Any, _T4],
+        action_5: Coroutine[Any, Any, _T5],
         /,
     ) -> tuple[_T1, _T2, _T3, _T4, _T5]:
         ...
@@ -521,21 +522,21 @@ class AsyncClient(BaseClient):
     @overload
     async def bulk(
         self,
-        action_1: Awaitable[_T1],
-        action_2: Awaitable[_T2],
-        action_3: Awaitable[_T3],
-        action_4: Awaitable[_T4],
-        action_5: Awaitable[_T5],
-        action_6: Awaitable[_T6],
+        action_1: Coroutine[Any, Any, _T1],
+        action_2: Coroutine[Any, Any, _T2],
+        action_3: Coroutine[Any, Any, _T3],
+        action_4: Coroutine[Any, Any, _T4],
+        action_5: Coroutine[Any, Any, _T5],
+        action_6: Coroutine[Any, Any, _T6],
         /,
     ) -> tuple[_T1, _T2, _T3, _T4, _T5, _T6]:
         ...
 
     @overload
-    async def bulk(self, *actions: Awaitable[Any]) -> tuple[Any, ...]:
+    async def bulk(self, *actions: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
         ...
 
-    async def bulk(self, *actions: Awaitable[Any]) -> tuple[Any, ...]:
+    async def bulk(self, *actions: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
         """Run a sequence of actions that require server communication together.
 
         This will use Sugar's `Bulk API`_ to batch all actions together and send them
