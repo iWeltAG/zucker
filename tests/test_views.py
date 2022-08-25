@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, List, Optional, Tuple, TypedDict
+from typing import Any, Callable, Iterable, List, Optional, Tuple, TypedDict, cast
 from uuid import uuid4
 
 import pytest
@@ -222,7 +222,9 @@ def test_iterating_and_slices(fake_client: FakeClient) -> None:
             offset = int(params["offset"])
             assert offset >= 0
 
-            return {"records": record_data[offset : offset + max_num]}
+            return {
+                "records": cast(JsonMapping, record_data[offset : offset + max_num])
+            }
         elif (method, url) == ("get", "Demo/count"):
             return {"record_count": len(record_data)}
         return None

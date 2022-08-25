@@ -1,5 +1,4 @@
-from typing import Sequence  # noqa: F401
-from typing import cast
+from typing import Callable, Sequence, cast  # noqa: F401
 from unittest.mock import MagicMock
 
 import pytest

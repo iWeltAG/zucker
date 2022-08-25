@@ -175,6 +175,7 @@ def test_authentication_and_request(fake_server: FakeServer) -> None:
     )
     assert not client.authenticated
     assert client.request("get", "notaroute")["ping"] == "pong"
+    client = client
     assert client.authenticated
 
     # The following statement would be unreachable because of the two
