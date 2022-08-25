@@ -101,7 +101,7 @@
 
         # This derivation runs the black and isort checks.
         style = mkCheckDerivation {
-          pname = "zucker-style-tests";
+          name = "zucker-style-checks";
           checkInputs = [(python.withPackages (ps: with ps; [
             black isort
           ]))];
@@ -113,7 +113,7 @@
 
         # Run mypy on the entire codebase.
         types = mkCheckDerivation {
-          pname = "zucker-type-checks";
+          name = "zucker-type-checks";
           checkInputs =  [(python.withPackages (ps: with ps; [
             pytest pytest-asyncio hypothesis mypy types-requests aiohttp
           ]))];
