@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import re
-from typing import Awaitable  # noqa: F401
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,7 +20,12 @@ from zucker.filtering import NegatableFilter, NullishFilter, NumericFilter, Valu
 from zucker.utils import ApiType, JsonType
 
 if TYPE_CHECKING:
-    from zucker.model.module import AsyncModule, BaseModule, SyncModule, UnboundModule
+    from zucker.model.module import (  # noqa: F401
+        AsyncModule,
+        BaseModule,
+        SyncModule,
+        UnboundModule,
+    )
 
 
 NativeType = TypeVar("NativeType")

@@ -1,13 +1,10 @@
-from typing import (
-    Any,
-    Mapping,
-    MutableMapping,
-    Sequence,
-    TypeGuard,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Mapping, MutableMapping, Sequence, TypeVar, Union
+
+if TYPE_CHECKING:
+    # TypeGuard is new in Python 3.10, and we are targeting 3.8+. In order to keep the
+    # project free of any hard dependencies, we only import it when checking types
+    # (which is always done on the latest version).
+    from typing import TypeGuard  # noqa: F401
 
 __all__ = [
     "JsonPrimitive",
@@ -36,12 +33,12 @@ MutableJsonMapping = MutableMapping[str, JsonType]
 ApiType = TypeVar("ApiType", bound=JsonType)
 
 
-def is_json_primitive(value: Any) -> TypeGuard[JsonPrimitive]:
+def is_json_primitive(value: Any) -> "TypeGuard[JsonPrimitive]":
     """Check if the provided object is a valid JSON primitive."""
     return isinstance(value, (type(None), bool, str, int, float))
 
 
-def is_json_mapping(value: Any) -> TypeGuard[JsonMapping]:
+def is_json_mapping(value: Any) -> "TypeGuard[JsonMapping]":
     """Recursively check if the provided object is a valid JSON mapping."""
     if not isinstance(value, Mapping):
         return False
@@ -53,7 +50,7 @@ def is_json_mapping(value: Any) -> TypeGuard[JsonMapping]:
     return True
 
 
-def is_json(value: Any) -> TypeGuard[JsonType]:
+def is_json(value: Any) -> "TypeGuard[JsonType]":
     """Recursively check if a provided data object is valid JSON (in the respective
     native Python types).
     """
