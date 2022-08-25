@@ -5,6 +5,7 @@
 , aiohttp
 , colored
 , pytestCheckHook
+, pytest-asyncio
 , pytest-cov
 , hypothesis
 }:
@@ -17,7 +18,7 @@ buildPythonPackage {
 
   checkInputs = [
     requests aiohttp colored
-    pytestCheckHook pytest-cov hypothesis
+    pytestCheckHook pytest-asyncio pytest-cov hypothesis
   ];
 
   # Currently doesn't work because of empty runtime dependencies.
