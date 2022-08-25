@@ -2,11 +2,13 @@
   description = "zucker";
 
   inputs.nixpkgs.url = "nixpkgs/nixpkgs-unstable";
+  inputs.nixpkgs-stable.url = "nixpkgs/release-22.05";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs, flake-utils }: (flake-utils.lib.eachDefaultSystem (system:
+  outputs = { self, nixpkgs, nixpkgs-stable, flake-utils }: (flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs { inherit system; };
+      stablePkgs = import nixpkgs-stable { inherit system; };
 
       python = pkgs.python310.override {
         packageOverrides = self: super: {
@@ -94,9 +96,9 @@
            '';
          } // definition);
       in {
-        inherit (packages) zucker;
-        zucker-python38 = pkgs.python38Packages.callPackage ./nix/zucker.nix { };
-        zucker-python39 = pkgs.python39Packages.callPackage ./nix/zucker.nix { };
+        zucker-python38 = stablePkgs.python38Packages.callPackage ./nix/zucker.nix { };
+        zucker-python39 = stablePkgs.python39Packages.callPackage ./nix/zucker.nix { };
+        zucker-python310 = stablePkgs.python310Packages.callPackage ./nix/zucker.nix { };
 
         # This derivation runs the black and isort checks.
         style = mkCheckDerivation {
