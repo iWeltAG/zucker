@@ -118,7 +118,7 @@
             pytest pytest-asyncio hypothesis mypy types-requests aiohttp
           ]))];
           checkPhase = ''
-            mypy tests/ zucker/
+            mypy --enable-recursive-aliases tests/ zucker/
           '';
         };
       };
