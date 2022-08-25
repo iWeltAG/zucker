@@ -18,7 +18,7 @@ from typing import (
 
 from zucker.client import SyncClient
 from zucker.exceptions import InvalidSugarResponseError
-from zucker.utils import JsonMapping, JsonPrimitive, JsonType, check_json_mapping
+from zucker.utils import JsonMapping, JsonPrimitive, JsonType, is_json_mapping
 
 if TYPE_CHECKING:
     from zucker.model.fields.base import Field
@@ -77,11 +77,6 @@ def inspect_enum(context: FieldInspectionContext) -> Mapping[str, Any]:
     enum_data = context.client.request(
         "get", f"{context.module_name}/enum/{context.field_name}"
     )
-    try:
-        check_json_mapping(enum_data)
-    except TypeError as error:
-        raise InvalidSugarResponseError("got invalid enum schema from Sugar") from error
-
     return {
         "enum": EnumRepr(
             f"{context.module_name}_{context.field_name}", list(enum_data.keys())
@@ -226,19 +221,6 @@ field_for_metadata = FieldMetadataRegistry()
 def inspect_modules_with_fields(
     modules_metadata: JsonMapping, client: SyncClient
 ) -> Sequence[InspectedModule]:
-    # TODO Convert these to actual type guards:
-
-    def assert_sugar_mapping(mapping: Any) -> None:
-        if not isinstance(mapping, Mapping):
-            raise InvalidSugarResponseError(
-                f"expecting mapping type, got {type(mapping)!r}"
-            )
-
-    def assert_sugar_contains(mapping: Any, name: str) -> None:
-        assert_sugar_mapping(mapping)
-        if name not in mapping:
-            raise InvalidSugarResponseError(f"expecting mapping that contains {name!r}")
-
     # First pass: create an inspection result for each module. This allows all modules
     # to be referenced, even if their fields haven't been populated yet.
     modules: dict[str, InspectedModule] = {}
@@ -258,12 +240,20 @@ def inspect_modules_with_fields(
 
     # Second pass: go through each module again and inspect their fields.
     for module_name, module_metadata in modules_metadata.items():
-        assert_sugar_contains(module_metadata, "fields")
-        assert_sugar_mapping(module_metadata["fields"])  # type: ignore
+        if (
+            not isinstance(module_metadata, Mapping)
+            or "fields" not in module_metadata
+            or not isinstance(module_metadata["fields"], Mapping)
+        ):
+            raise InvalidSugarResponseError("expected JSON mapping for module metadata")
 
         fields: MutableSequence[InspectedField] = []
 
-        for field_name, field_metadata in module_metadata["fields"].items():  # type: ignore
+        for field_name, field_metadata in module_metadata["fields"].items():
+            if not isinstance(field_metadata, Mapping):
+                raise InvalidSugarResponseError(
+                    "expected JSON mapping for field metadata"
+                )
             if "name" in field_metadata and field_name != field_metadata["name"]:
                 raise InvalidSugarResponseError(
                     f"non-matching field names {field_name!r} (from field set key) and "

@@ -28,7 +28,7 @@ from uuid import UUID
 
 from ..exceptions import InvalidSugarResponseError
 from ..filtering import Combinator, FilterSet, GenericFilter
-from ..utils import JsonMapping, JsonType, check_json_mapping
+from ..utils import JsonMapping, JsonType, is_json_mapping
 
 if TYPE_CHECKING:
     from ..client import BaseClient  # noqa: F401
@@ -297,10 +297,9 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
             record = None
         else:
             record_data = data["records"][0]
-            try:
-                record = self._module(**check_json_mapping(record_data))
-            except TypeError:
+            if not isinstance(record_data, Mapping):
                 raise InvalidSugarResponseError("got invalid record data")
+            record = self._module(**record_data)
         self._record_cache[offset] = record
         return record
 

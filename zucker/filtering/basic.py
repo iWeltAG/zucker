@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from abc import ABC
-from numbers import Number
 from typing import Any, Generic, Literal, Sequence, TypeVar, Union, cast
 
-from ..utils import ApiType, JsonMapping
+from ..utils import ApiType, JsonMapping, JsonType
 from .combining import FilterSet
 from .types import Combinator
 
-Filters = TypeVar("Filters")
+Filters = TypeVar("Filters", bound=JsonType)
+# We can't really use numbers.Real here because filters are bound by the JSON spec, so
+# arbitrary Python reals don't work.
+Real = Union[int, float]
 
 
 class BasicFilter(Generic[Filters], ABC):
@@ -169,18 +171,18 @@ class NotEmptyFilter(BasicFilter[Literal[""]]):
         return "$not_empty"
 
 
-class NumericFilter(NegatableFilter[Number]):
+class NumericFilter(NegatableFilter[Real]):
     def __init__(
         self,
         field_name: str,
-        value: Number,
+        value: Real,
         *,
         greater: bool,
         equal: bool,
     ):
-        if not isinstance(value, Number):
+        if not isinstance(value, (int, float)):
             raise TypeError(
-                f"numeric filters only work with numbers, got {type(value)!r}"
+                f"numeric filters only work with real numbers, got {type(value)!r}"
             )
 
         super().__init__(field_name, value)

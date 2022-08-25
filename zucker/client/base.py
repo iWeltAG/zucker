@@ -30,7 +30,7 @@ from zucker.exceptions import (
     UnfetchedMetadataError,
     ZuckerException,
 )
-from zucker.utils import JsonMapping, JsonType, MutableJsonMapping, check_json_mapping
+from zucker.utils import JsonMapping, JsonType, MutableJsonMapping, is_json_mapping
 
 if TYPE_CHECKING:
     from zucker.model.module import AsyncModule, BoundModule, SyncModule  # noqa: F401
@@ -127,14 +127,16 @@ class BaseClient(abc.ABC):
             metadata has not been fetched yet. In that case, call :meth:`fetch_metadata`
             to populate the cache.
         """
-        if type_name not in self._metadata:
+        try:
+            metadata = self._metadata[type_name]
+        except KeyError:
             raise UnfetchedMetadataError(
                 f"metadata field {type_name!r} is not available"
             )
-        try:
-            return check_json_mapping(self._metadata[type_name])
-        except TypeError:
+
+        if not is_json_mapping(metadata):
             raise InvalidSugarResponseError("got invalid server metadata")
+        return metadata
 
     @property
     def module_names(self) -> Iterator[str]:
@@ -227,7 +229,7 @@ class BaseClient(abc.ABC):
             )
 
     def _finalize_authentication(
-        self, auth_job_name: str, response_code: int, data: Any
+        self, auth_job_name: str, response_code: int, response_json: JsonType
     ) -> None:
         """Process the result from the authentication call and save the required
         tokens."""
@@ -236,10 +238,9 @@ class BaseClient(abc.ABC):
                 f"{auth_job_name} failed with status code {response_code}"
             )
 
-        response_json = check_json_mapping(data)
-
         if (
-            "access_token" not in response_json
+            not is_json_mapping(response_json)
+            or "access_token" not in response_json
             or "refresh_token" not in response_json
             or "expires_in" not in response_json
         ):
@@ -265,13 +266,11 @@ class BaseClient(abc.ABC):
 
         self._authentication = (True, access_token, refresh_token, expire_timestamp)
 
-    def _finalize_request(self, response_code: int, data: Any) -> JsonMapping:
+    def _finalize_request(self, response_code: int, response_json: Any) -> JsonMapping:
         """Process the response from an API request and return a type-checked
         ``JsonMapping`` type.
         """
-        try:
-            response_json = check_json_mapping(data)
-        except TypeError:
+        if not is_json_mapping(response_json):
             raise InvalidSugarResponseError("got invalid JSON response from Sugar")
         if 200 <= response_code < 300:
             return response_json
@@ -464,10 +463,14 @@ class AsyncClient(BaseClient):
         else:
             await self._ensure_authentication()
 
-            response_code, response_raw_json = await self.raw_request(
+            response_code, raw_response_json = await self.raw_request(
                 method, endpoint, params=params, data=data, json=json
             )
-            response_json = check_json_mapping(response_raw_json)
+            if not is_json_mapping(raw_response_json):
+                raise InvalidSugarResponseError(
+                    f"expected JSON response, got {type(raw_response_json)}"
+                )
+            response_json = raw_response_json
 
         return self._finalize_request(response_code, response_json)
 
@@ -648,14 +651,13 @@ class AsyncClient(BaseClient):
                     )
                 if (
                     "contents" not in item
-                    or not isinstance(item["contents"], Mapping)
+                    or not is_json_mapping(item["contents"])
                     or "status" not in item
                     or not isinstance(item["status"], int)
                 ):
                     raise InvalidSugarResponseError(
                         "got invalid dictionary layout from bulk API"
                     )
-                check_json_mapping(item["contents"])
                 responses[key] = (item["status"], item["contents"])
 
             # When these events are set, handle_bulk() will pick it up and take the

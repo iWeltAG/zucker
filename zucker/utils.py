@@ -1,4 +1,13 @@
-from typing import Any, Mapping, MutableMapping, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Mapping,
+    MutableMapping,
+    Sequence,
+    TypeGuard,
+    TypeVar,
+    Union,
+    cast,
+)
 
 __all__ = [
     "JsonPrimitive",
@@ -6,19 +15,20 @@ __all__ = [
     "JsonMapping",
     "MutableJsonMapping",
     "ApiType",
-    "check_json_primitive",
-    "check_json_mapping",
-    "check_json",
+    "is_json_primitive",
+    "is_json_mapping",
+    "is_json",
 ]
 
 
 # MyPy currently doesn't support recursive types, so we can't actually build a correct
 # 'JSON' type yet. See here: https://github.com/python/mypy/issues/731
 #
-# JsonType = Union[None, bool, str, int, float, Mapping[str, "JsonType"], Sequence["JsonType"]]
 JsonPrimitive = Union[None, bool, str, int, float]
-JsonType = Union[JsonPrimitive, Mapping, Sequence]
-NonNoneJsonType = Union[bool, str, int, float, Mapping, Sequence]
+JsonType = Union[JsonPrimitive, Mapping[str, "JsonType"], Sequence["JsonType"]]
+NonNoneJsonType = Union[
+    bool, str, int, float, Mapping[str, "JsonType"], Sequence["JsonType"]
+]
 
 JsonMapping = Mapping[str, JsonType]
 MutableJsonMapping = MutableMapping[str, JsonType]
@@ -26,42 +36,33 @@ MutableJsonMapping = MutableMapping[str, JsonType]
 ApiType = TypeVar("ApiType", bound=JsonType)
 
 
-def check_json_primitive(data: Any) -> JsonPrimitive:
-    """Check if the provided object is a valid JSON primitive and return it."""
-    if not isinstance(data, (type(None), bool, str, int, float)):
-        raise TypeError(f"expected JSON primitive, got f{data}")
-    return data
+def is_json_primitive(value: Any) -> TypeGuard[JsonPrimitive]:
+    """Check if the provided object is a valid JSON primitive."""
+    return isinstance(value, (type(None), bool, str, int, float))
 
 
-def check_json_mapping(data: Any) -> JsonMapping:
-    """Recursively check if the provided object is a valid JSON mapping and
-    return it.
-    """
-    if not isinstance(data, Mapping):
-        raise TypeError(f"expected JSON dictionary, got f{data}")
-    for key, value in data.items():
+def is_json_mapping(value: Any) -> TypeGuard[JsonMapping]:
+    """Recursively check if the provided object is a valid JSON mapping."""
+    if not isinstance(value, Mapping):
+        return False
+    for key, value in value.items():
         if not isinstance(key, str):
-            raise TypeError(f"expected string key, got {type(key)!r}")
-        check_json(value)
-    return cast(JsonMapping, data)
+            return False
+        if not is_json(value):
+            return False
+    return True
 
 
-def check_json(data: Any) -> JsonType:
+def is_json(value: Any) -> TypeGuard[JsonType]:
     """Recursively check if a provided data object is valid JSON (in the respective
-    native Python types) and return it.
-
-    This method is used as a type guard for input that comes from the backend.
+    native Python types).
     """
-    try:
-        return check_json_primitive(data)
-    except TypeError:
-        pass
-
-    if isinstance(data, Sequence):
-        for item in data:
-            check_json(item)
-        return cast(JsonType, data)
-    elif isinstance(data, Mapping):
-        return check_json_mapping(data)
-
-    raise TypeError(f"expected valid JSON type, got {type(data)!r}")
+    if is_json_primitive(value) or is_json_mapping(value):
+        return True
+    elif isinstance(value, Sequence):
+        for item in value:
+            if not is_json(item):
+                return False
+        return True
+    else:
+        return False

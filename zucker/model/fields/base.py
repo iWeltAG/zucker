@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import re
-from numbers import Number
 from typing import Awaitable  # noqa: F401
 from typing import (
     TYPE_CHECKING,
@@ -343,33 +342,41 @@ class MutableScalarField(
 class NumericField(Generic[ApiType], ScalarField[ApiType, ApiType], abc.ABC):
     """Scalar field with filtering operators that produce a total ordering."""
 
-    def __lt__(self, other: Number) -> NumericFilter:
+    def __lt__(self, other: Any) -> NumericFilter:
         """Filter for values less than the specified scalar:
 
         >>> Person.age < 10
         """
-        return NumericFilter(self.name, other, greater=False, equal=False)
+        if isinstance(other, (int, float)):
+            return NumericFilter(self.name, other, greater=False, equal=False)
+        return NotImplemented
 
-    def __lte__(self, other: Number) -> NumericFilter:
+    def __lte__(self, other: Any) -> NumericFilter:
         """Filter for values less than or equal to the specified scalar:
 
         >>> Person.age <= 18
         """
-        return NumericFilter(self.name, other, greater=False, equal=True)
+        if isinstance(other, (int, float)):
+            return NumericFilter(self.name, other, greater=False, equal=True)
+        return NotImplemented
 
-    def __gt__(self, other: Number) -> NumericFilter:
+    def __gt__(self, other: Any) -> NumericFilter:
         """Filter for values less than the specified scalar:
 
         >>> Person.age > 60
         """
-        return NumericFilter(self.name, other, greater=True, equal=False)
+        if isinstance(other, (int, float)):
+            return NumericFilter(self.name, other, greater=True, equal=False)
+        return NotImplemented
 
-    def __gte__(self, other: Number) -> NumericFilter:
+    def __gte__(self, other: Any) -> NumericFilter:
         """Filter for values greater than or equal to the specified scalar:
 
         >>> Person.age >= 21
         """
-        return NumericFilter(self.name, other, greater=True, equal=True)
+        if isinstance(other, (int, float)):
+            return NumericFilter(self.name, other, greater=True, equal=True)
+        return NotImplemented
 
 
 class MutableNumericField(
