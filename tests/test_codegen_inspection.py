@@ -1,4 +1,4 @@
-from typing import Any
+from typing import List
 
 from hypothesis import given
 from hypothesis import strategies as st
@@ -16,13 +16,18 @@ from zucker.utils import MutableJsonMapping
 
 
 @st.composite
-def field_names(draw: st.DrawFn) -> str:
+def field_names(
+    # When running this on Python 3.8 we are on a Hypothesis version that doesn't expose
+    # DrawFn yet, hence this needs to be a string. Mypy runs with the latest dependency
+    # versions so that isn't a problem.
+    draw: "st.DrawFn",
+) -> str:
     return draw(st.text(min_size=1))
 
 
 def augment_field_data(
     *,
-    draw: st.DrawFn,
+    draw: "st.DrawFn",
     arguments: MutableJsonMapping,
     raw_metadata: MutableJsonMapping,
     name: str,
@@ -43,7 +48,7 @@ def augment_field_data(
 
 
 @st.composite
-def inspected_boolean_fields(draw: st.DrawFn) -> InspectedField:
+def inspected_boolean_fields(draw: "st.DrawFn") -> InspectedField:
     name = draw(field_names())
     arguments: MutableJsonMapping = {}
     raw_metadata: MutableJsonMapping = {"type": "bool", "default": draw(st.booleans())}
@@ -59,7 +64,7 @@ def inspected_boolean_fields(draw: st.DrawFn) -> InspectedField:
 
 
 @st.composite
-def inspected_string_fields(draw: st.DrawFn) -> InspectedField:
+def inspected_string_fields(draw: "st.DrawFn") -> InspectedField:
     name = draw(field_names())
     sugar_type = draw(st.sampled_from(("text", "varchar")))
     arguments: MutableJsonMapping = {}
@@ -83,12 +88,12 @@ def inspected_string_fields(draw: st.DrawFn) -> InspectedField:
 
 
 @st.composite
-def inspected_scalar_fields(draw: st.DrawFn) -> InspectedField:
+def inspected_scalar_fields(draw: "st.DrawFn") -> InspectedField:
     return draw(st.one_of(inspected_boolean_fields(), inspected_string_fields()))
 
 
 @st.composite
-def inspected_modules(draw: st.DrawFn) -> InspectedModule:
+def inspected_modules(draw: "st.DrawFn") -> InspectedModule:
     name = draw(field_names())
 
     def get_field_name(inspected_field: InspectedField) -> str:
@@ -107,7 +112,7 @@ def inspected_modules(draw: st.DrawFn) -> InspectedModule:
 
 
 @given(st.lists(st.text()))
-def test_indenting(lines: list[str]) -> None:
+def test_indenting(lines: List[str]) -> None:
     all_lines = "\n".join(lines).split("\n")
     for steps in range(0, 10):
         expected_result = "\n".join("  " * steps + line for line in all_lines)

@@ -325,7 +325,7 @@ class SyncClient(BaseClient, abc.ABC):
         params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonMapping]:
+    ) -> Tuple[int, JsonMapping]:
         """Request handling method that should be overridden by client implementations.
 
         This takes the same parameters as :meth:`BaseClient.request`.
@@ -389,7 +389,7 @@ class AsyncClient(BaseClient):
         )
 
         self._handle_bulk: Optional[
-            Callable[[JsonMapping], Awaitable[tuple[int, JsonMapping]]]
+            Callable[[JsonMapping], Awaitable[Tuple[int, JsonMapping]]]
         ] = None
 
     async def close(self) -> None:
@@ -404,7 +404,7 @@ class AsyncClient(BaseClient):
         params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonType]:
+    ) -> Tuple[int, JsonType]:
         """Request handling method that should be overridden by client implementations.
 
         This takes the same parameters as :meth:`BaseClient.request`.
@@ -480,13 +480,13 @@ class AsyncClient(BaseClient):
     # https://github.com/python/typeshed/blob/master/stdlib/asyncio/tasks.pyi#L44-L47
 
     @overload
-    async def bulk(self, action_1: Coroutine[Any, Any, _T1], /) -> tuple[_T1]:
+    async def bulk(self, action_1: Coroutine[Any, Any, _T1], /) -> Tuple[_T1]:
         ...
 
     @overload
     async def bulk(
         self, action_1: Coroutine[Any, Any, _T1], action_2: Coroutine[Any, Any, _T2], /
-    ) -> tuple[_T1, _T2]:
+    ) -> Tuple[_T1, _T2]:
         ...
 
     @overload
@@ -496,7 +496,7 @@ class AsyncClient(BaseClient):
         action_2: Coroutine[Any, Any, _T2],
         action_3: Coroutine[Any, Any, _T3],
         /,
-    ) -> tuple[_T1, _T2, _T3]:
+    ) -> Tuple[_T1, _T2, _T3]:
         ...
 
     @overload
@@ -507,7 +507,7 @@ class AsyncClient(BaseClient):
         action_3: Coroutine[Any, Any, _T3],
         action_4: Coroutine[Any, Any, _T4],
         /,
-    ) -> tuple[_T1, _T2, _T3, _T4]:
+    ) -> Tuple[_T1, _T2, _T3, _T4]:
         ...
 
     @overload
@@ -519,7 +519,7 @@ class AsyncClient(BaseClient):
         action_4: Coroutine[Any, Any, _T4],
         action_5: Coroutine[Any, Any, _T5],
         /,
-    ) -> tuple[_T1, _T2, _T3, _T4, _T5]:
+    ) -> Tuple[_T1, _T2, _T3, _T4, _T5]:
         ...
 
     @overload
@@ -532,14 +532,14 @@ class AsyncClient(BaseClient):
         action_5: Coroutine[Any, Any, _T5],
         action_6: Coroutine[Any, Any, _T6],
         /,
-    ) -> tuple[_T1, _T2, _T3, _T4, _T5, _T6]:
+    ) -> Tuple[_T1, _T2, _T3, _T4, _T5, _T6]:
         ...
 
     @overload
-    async def bulk(self, *actions: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
+    async def bulk(self, *actions: Coroutine[Any, Any, Any]) -> Tuple[Any, ...]:
         ...
 
-    async def bulk(self, *actions: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
+    async def bulk(self, *actions: Coroutine[Any, Any, Any]) -> Tuple[Any, ...]:
         """Run a sequence of actions that require server communication together.
 
         This will use Sugar's `Bulk API`_ to batch all actions together and send them
@@ -571,7 +571,7 @@ class AsyncClient(BaseClient):
 
         async def handle_bulk(
             request_definition: JsonMapping,
-        ) -> tuple[int, JsonMapping]:
+        ) -> Tuple[int, JsonMapping]:
             """Callback for handling bulk requests. This is called from the actual
             request() method and will queue the request, wait for the corresponding
             batch is done and then return the result."""
@@ -623,7 +623,7 @@ class AsyncClient(BaseClient):
             await self._ensure_authentication()
 
             request_keys = list(request_definitions.keys())
-            request_events: list[asyncio.Event] = [
+            request_events: Sequence[asyncio.Event] = [
                 request_definitions[key][1] for key in request_keys
             ]
             response_code, response_json = await self.raw_request(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Tuple
 
 from zucker.utils import JsonMapping
 
@@ -41,7 +41,7 @@ class RequestsClient(SyncClient):
         params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonMapping]:
+    ) -> Tuple[int, JsonMapping]:
         response = self._session.request(
             method,
             f"{self.base_url}/rest/v11_5/{endpoint}",

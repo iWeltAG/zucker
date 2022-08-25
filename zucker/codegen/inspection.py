@@ -5,10 +5,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
+    List,
     Mapping,
     MutableSequence,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -86,10 +89,10 @@ def inspect_enum(context: FieldInspectionContext) -> Mapping[str, Any]:
 
 class FieldMetadataRegistry:
     def __init__(self) -> None:
-        self.field_initializers: list[
+        self.field_initializers: List[
             Callable[[FieldInspectionContext], FieldInitializerReturnType]
         ] = []
-        self.field_types: set[Type[Field[Any, Any]]] = set()
+        self.field_types: Set[Type[Field[Any, Any]]] = set()
 
     def __call__(self, context: FieldInspectionContext) -> FieldInitializerReturnType:
         """Find the first registered field that accepts a specified context."""
@@ -223,7 +226,7 @@ def inspect_modules_with_fields(
 ) -> Sequence[InspectedModule]:
     # First pass: create an inspection result for each module. This allows all modules
     # to be referenced, even if their fields haven't been populated yet.
-    modules: dict[str, InspectedModule] = {}
+    modules: Dict[str, InspectedModule] = {}
     for module_name, module_metadata in modules_metadata.items():
         if module_name in modules:
             raise InvalidSugarResponseError(

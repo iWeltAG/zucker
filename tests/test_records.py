@@ -1,4 +1,5 @@
-from typing import Callable
+from typing import Sequence  # noqa: F401
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -40,7 +41,7 @@ def test_strings(client: SyncClient) -> None:
     class Demo(model.SyncModule, BaseDemo, client=client):
         pass
 
-    for func in list[Callable[[object], str]]((repr, str)):
+    for func in cast("Sequence[Callable[[object], str]]", (repr, str)):
         record = BaseDemo(id="one", name="Gustave")
         assert "BaseDemo" in func(record)
         assert "one" in func(record)

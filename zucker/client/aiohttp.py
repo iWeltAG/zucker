@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Tuple
 
 from zucker.utils import JsonMapping, JsonType
 
@@ -47,7 +47,7 @@ class AioClient(AsyncClient):
         params: Optional[Mapping[str, str]] = None,
         data: Optional[JsonMapping] = None,
         json: Optional[JsonMapping] = None,
-    ) -> tuple[int, JsonType]:
+    ) -> Tuple[int, JsonType]:
         import aiohttp
 
         if self._session is None:

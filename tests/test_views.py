@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, Optional, TypedDict
+from typing import Any, Callable, Iterable, List, Optional, Tuple, TypedDict
 from uuid import uuid4
 
 import pytest
@@ -14,7 +14,7 @@ FakeClientDataCallback = Callable[[str, str, JsonMapping], Optional[JsonMapping]
 class FakeClient(SyncClient):
     def __init__(self) -> None:
         super().__init__("http://test", "u", "p")
-        self.data_callbacks = list[FakeClientDataCallback]()
+        self.data_callbacks: list[FakeClientDataCallback] = []
 
     def request(
         self,
@@ -33,7 +33,7 @@ class FakeClient(SyncClient):
                 return data
         raise RuntimeError(f"requesting non_mocked {method} API call {url!r}")
 
-    def raw_request(self, *args: Any, **kwargs: Any) -> tuple[int, JsonMapping]:
+    def raw_request(self, *args: Any, **kwargs: Any) -> Tuple[int, JsonMapping]:
         raise RuntimeError("using non-mocked raw_request method")
 
     def set_data(self, method: str, url: str, response: JsonMapping) -> None:
@@ -193,7 +193,7 @@ def test_iterating_and_slices(fake_client: FakeClient) -> None:
     class Demo(model.SyncModule, client=fake_client):
         pass
 
-    record_data: list[RecordDataWithId] = [
+    record_data: List[RecordDataWithId] = [
         {"_module": "Demo", "id": record_id}
         for record_id in (
             "zero",

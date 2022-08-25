@@ -13,6 +13,7 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    List,
     Mapping,
     MutableMapping,
     MutableSequence,
@@ -391,7 +392,7 @@ class View(Generic[ModuleType, GetReturn, OptionalGetReturn], abc.ABC):
                 params["filter{}".format(prefix)] = str(filter_definition)
                 return
 
-            iterator: Iterable[tuple[str, JsonType]]
+            iterator: Iterable[Tuple[str, JsonType]]
             if isinstance(filter_definition, Mapping):
                 iterator = filter_definition.items()
             elif isinstance(filter_definition, Sequence):
@@ -509,7 +510,7 @@ class AsyncViewIterator(Generic[AsyncModuleType]):
     def __init__(self, view: AsyncView[AsyncModuleType]):
         self.view = view
         self.current_index = 0
-        self.queue: list[Optional[AsyncModuleType]] = []
+        self.queue: List[Optional[AsyncModuleType]] = []
 
     def __aiter__(self) -> AsyncIterator[AsyncModuleType]:
         return self

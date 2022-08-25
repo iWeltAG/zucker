@@ -1,7 +1,7 @@
 import asyncio
 import os
 from datetime import timedelta
-from typing import Generator, cast
+from typing import Generator, Tuple, cast
 
 import pytest
 from hypothesis import Phase, given, settings
@@ -11,13 +11,13 @@ from zucker import AioClient, RequestsClient, model
 from zucker.client import AsyncClient, SyncClient
 
 
-def get_credentials() -> tuple[str, str, str, str]:
+def get_credentials() -> Tuple[str, str, str, str]:
     if "ZUCKER_TEST_CREDENTIALS" not in os.environ:
         pytest.skip("test server credentials not configured")
 
     credentials = tuple(os.environ["ZUCKER_TEST_CREDENTIALS"].split("|"))
     assert len(credentials) == 4, "invalid format for test server credentials"
-    return cast("tuple[str, str, str, str]", credentials)
+    return cast("Tuple[str, str, str, str]", credentials)
 
 
 @pytest.fixture(scope="module")
@@ -52,7 +52,12 @@ def live_async_client(
 
 
 @st.composite
-def names(draw: st.DrawFn, min_size: int = 4, max_size: int = 100) -> str:
+def names(
+    # See test_codegen_inspection.py for why this is a string.
+    draw: "st.DrawFn",
+    min_size: int = 4,
+    max_size: int = 100,
+) -> str:
     return draw(
         st.text(
             st.characters(whitelist_categories=("L",)),
