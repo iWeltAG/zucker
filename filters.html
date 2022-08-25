@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filtering results &mdash; Zucker  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Field reference" href="fields.html" />
+    <link rel="prev" title="Module views" href="views.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Zucker
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">Connecting and using a client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Data model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Module views</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Filtering results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#internal-representation">Internal representation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Field reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Zucker</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Filtering results</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/filters.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="filtering-results">
+<span id="filtering"></span><h1>Filtering results<a class="headerlink" href="#filtering-results" title="Permalink to this heading"></a></h1>
+<p>When constructing a <a class="reference internal" href="views.html#zucker.model.view.View" title="zucker.model.view.View"><code class="xref py py-class docutils literal notranslate"><span class="pre">View</span></code></a> object, you can filter
+results using a dictionary object in the format defined by Sugar (see the last
+section on this page for more details on this approach). Since building this
+object is cumbersome and not type-safe, Zucker provides a system to build these
+queries for you. It works by using the existing fields you have defined in the
+model.</p>
+<p>For example, to search for contacts by their name, pass the following:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">first_name</span> <span class="o">==</span> <span class="s2">&quot;Paul&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Some filters can also be inverted. The following examples will reveal contacts
+not found through online research. Both these options are identical:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">==</span> <span class="s2">&quot;Online&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">!=</span> <span class="s2">&quot;Online&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To combine two or more filters, use logical AND and OR operators. For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span>
+<span class="gp">... </span>      <span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">==</span> <span class="s2">&quot;Online&quot;</span><span class="p">)</span>
+<span class="gp">... </span>      <span class="o">|</span> <span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">email_opt_out</span> <span class="o">==</span> <span class="kc">False</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To produce an AND, you can also pass the filters directly to the <code class="docutils literal notranslate"><span class="pre">.find()</span></code>
+method:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span>
+<span class="gp">... </span>      <span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">==</span> <span class="s2">&quot;Marketing&quot;</span><span class="p">,</span>
+<span class="gp">... </span>      <span class="n">Contact</span><span class="o">.</span><span class="n">email_opt_out</span> <span class="o">==</span> <span class="kc">True</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See the <a class="reference internal" href="fields.html#fields"><span class="std std-ref">complete field reference</span></a> for details on the individual
+filtering methods you can use.</p>
+<section id="internal-representation">
+<h2>Internal representation<a class="headerlink" href="#internal-representation" title="Permalink to this heading"></a></h2>
+<p>Internally, all these filters get compiled to the MongoDB-like query
+dictionaries the Sugar backend accepts. In most cases, it is also possible to
+directly provide an object like this instead of using the query-building API.
+You may need to resort to doing this if the specific filtering feature isn’t
+implemented in Zucker yet.</p>
+<p>The <a class="reference external" href="https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_9.0/Integration/Web_Services/REST_API/Endpoints/module_GET/#Filter_Expressions">Sugar Developer Guide</a> gives a more complete overview of this syntax. In
+short, these objects are composed of keys which denote the field to be checked
+and a corresponding value that field should have. This object can be passed when
+creating views (for example when calling <code class="docutils literal notranslate"><span class="pre">.find()</span></code> on a module or when
+filtering an existing view):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">({</span>
+<span class="gp">... </span>   <span class="s2">&quot;lead_source&quot;</span><span class="p">:</span> <span class="s2">&quot;Online&quot;</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="s2">&quot;email_opt_out&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="s2">&quot;phone_mobile&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;$starts&quot;</span><span class="p">:</span> <span class="s2">&quot;+49&quot;</span> <span class="p">}</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="go">&lt;filtered view on Contact&gt;</span>
+</pre></div>
+</div>
+<p>Just like with the Zucker-built query objects, you can pass more than one which
+will be AND-ed together. This will produce the same result as the last example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span>
+<span class="gp">... </span>   <span class="p">{</span> <span class="s2">&quot;lead_source&quot;</span><span class="p">:</span> <span class="s2">&quot;Online&quot;</span> <span class="p">},</span>
+<span class="gp">... </span>   <span class="p">{</span> <span class="s2">&quot;email_opt_out&quot;</span><span class="p">:</span> <span class="kc">True</span> <span class="p">},</span>
+<span class="gp">... </span>   <span class="p">{</span> <span class="s2">&quot;phone_mobile&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;$starts&quot;</span><span class="p">:</span> <span class="s2">&quot;+49&quot;</span> <span class="p">}</span> <span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="go">&lt;filtered view on Contact&gt;</span>
+</pre></div>
+</div>
+<p>While it is entirely possible to write all queries directly like this, it is not
+recommended because then you give up type safety. Instead, try to use the fields
+directly as much as possible and only fall back to raw dictionaries where no
+corresponding filter API from Zucker exists yet:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span>
+<span class="gp">... </span>   <span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">==</span> <span class="s2">&quot;Online&quot;</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="n">Contact</span><span class="o">.</span><span class="n">email_opt_out</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>   <span class="p">{</span> <span class="s2">&quot;phone_mobile&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;$starts&quot;</span><span class="p">:</span> <span class="s2">&quot;+49&quot;</span> <span class="p">}</span> <span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="go">&lt;filtered view on Contact&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="views.html" class="btn btn-neutral float-left" title="Module views" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fields.html" class="btn btn-neutral float-right" title="Field reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 1980, iWelt AG.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

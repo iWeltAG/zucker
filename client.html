@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connecting and using a client &mdash; Zucker  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Data model" href="model.html" />
+    <link rel="prev" title="Zucker" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Zucker
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Connecting and using a client</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#client-api">Client API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#closing">Closing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metadata">Metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-modules">Supported modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generic-requests">Generic requests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bulking">Bulking</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bundled-clients">Bundled clients</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requestsclient-synchronous"><code class="docutils literal notranslate"><span class="pre">RequestsClient</span></code> (synchronous)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#aioclient-asynchronous"><code class="docutils literal notranslate"><span class="pre">AioClient</span></code> (asynchronous)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-your-own-client">Implementing your own client</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Data model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Module views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filtering results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Field reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Zucker</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Connecting and using a client</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/client.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="connecting-and-using-a-client">
+<h1>Connecting and using a client<a class="headerlink" href="#connecting-and-using-a-client" title="Permalink to this heading"></a></h1>
+<p>To connect to a running Sugar server, use one of the provided client classes.
+These clients act as a middleware between some HTTP library and the other Zucker
+components. That means that every client type uses a different underlying
+transport library. You can use this to create your own client if you are already
+using another requests library that isn’t natively supported by Zucker yet.
+Further, the client implementation will determine whether actions will be
+synchronous or <a class="reference external" href="https://docs.python.org/3/library/asyncio.html">asychronous</a>. In general, all clients need to be initialized
+with the URL of the server and a pair of OAuth credentials:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crm</span> <span class="o">=</span> <span class="n">SomeClient</span><span class="p">(</span><span class="s2">&quot;https://sugar.local&quot;</span><span class="p">,</span> <span class="s2">&quot;username&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, this will connect using the <code class="docutils literal notranslate"><span class="pre">zucker</span></code> <a class="reference external" href="https://support.sugarcrm.com/Documentation/Sugar_Versions/11.1/Pro/Administration_Guide/Developer_Tools/#Configure_API_Platforms">API platform</a>. Make sure
+to create it in the admin section on the server or provide another platform
+name using the <code class="docutils literal notranslate"><span class="pre">client_platform</span></code> parameter. See the constructor
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code> documentation for more
+parameters.</p>
+</div>
+<p>See the bottom of this page for a full list of clients. Once the client has been
+created, you can go ahead and <a class="reference internal" href="model.html#defining-modules"><span class="std std-ref">define a data model</span></a> that
+matches the server’s. This will be the main way to use Zucker’s ORM system.</p>
+<section id="client-api">
+<h2>Client API<a class="headerlink" href="#client-api" title="Permalink to this heading"></a></h2>
+<p>Clients are declared as follows. This is the definition of the base superclass
+for all clients, synchronous and asynchronous:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.client.base.</span></span><span class="sig-name descname"><span class="pre">BaseClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'zucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.client.base.BaseClient" title="Permalink to this definition"></a></dt>
+<dd><p>Connection handler that handles communicating with a SugarCRM instance.</p>
+<p>This is the main entry point for interfacing with models. After creating a new
+instance, the server’s modules are available as attributes on the client. Concrete
+client implementations (for different transport mechanisms) should implement one of
+<a class="reference internal" href="#zucker.client.base.SyncClient" title="zucker.client.base.SyncClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">SyncClient</span></code></a> or <a class="reference internal" href="#zucker.client.base.AsyncClient" title="zucker.client.base.AsyncClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncClient</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'zucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.client.base.BaseClient.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Construct a client instance.</p>
+<p>This may take a few seconds, as it performs initial authentication as well as querying
+the server for metadata about it’s configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_url</strong> – The URL of the SugarCRM installation to connect to.</p></li>
+<li><p><strong>username</strong> – Username to authenticate with.</p></li>
+<li><p><strong>password</strong> – Password to authenticate with.</p></li>
+<li><p><strong>client_platform</strong> – OAuth platform string.</p></li>
+<li><p><strong>verify_ssl</strong> – Set this to false to disable verification of the server’s SSL
+certificate. This should only be used while testing!</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="closing">
+<h3>Closing<a class="headerlink" href="#closing" title="Permalink to this heading"></a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.close">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.client.base.BaseClient.close" title="Permalink to this definition"></a></dt>
+<dd><p>Perform cleanup operations.</p>
+<p>This method should be called when the client is no longer used. Further
+operations on the client or any of its modules are consider undefined behavior
+afterwards. Some clients may be able to reinitialize transparently after
+closing while others may be unusable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method may be synchronous or asychronous, depending on the client.</p>
+</div>
+</dd></dl>
+
+</section>
+<section id="metadata">
+<h3>Metadata<a class="headerlink" href="#metadata" title="Permalink to this heading"></a></h3>
+<p>The Metadata API yields information about the Sugar server’s configuration and
+data model. If you would like to query this API, you might also want to read
+<a class="reference external" href="https://sugarclub.sugarcrm.com/dev-club/b/dev-blog/posts/3-tips-for-using-the-sugar-metadata-api">this blog post</a> from Sugar. Since metadata fetching can take quite a while,
+it needs to be initiated explicitly:</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.fetch_metadata">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">fetch_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.client.base.BaseClient.fetch_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Make sure server metadata for the given set of types is available.</p>
+<p><strong>Example.</strong> Pass a list of metadata types that should be cached to this
+method:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crm</span><span class="o">.</span><span class="n">fetch_metadata</span><span class="p">(</span><span class="s2">&quot;server_info&quot;</span><span class="p">,</span> <span class="s2">&quot;full_module_list&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">await</span> <span class="n">async_crm</span><span class="o">.</span><span class="n">fetch_metadata</span><span class="p">(</span><span class="s2">&quot;server_info&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Here is a non-exhaustive list of these type names:
+<code class="docutils literal notranslate"><span class="pre">hidden_subpanels</span></code>,
+<code class="docutils literal notranslate"><span class="pre">currencies</span></code>,
+<code class="docutils literal notranslate"><span class="pre">module_tab_map</span></code>,
+<code class="docutils literal notranslate"><span class="pre">labels</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ordered_labels</span></code>,
+<code class="docutils literal notranslate"><span class="pre">config</span></code>,
+<code class="docutils literal notranslate"><span class="pre">relationships</span></code>,
+<code class="docutils literal notranslate"><span class="pre">server_info</span></code>,
+<code class="docutils literal notranslate"><span class="pre">logo_url</span></code>,
+<code class="docutils literal notranslate"><span class="pre">languages</span></code>,
+<code class="docutils literal notranslate"><span class="pre">full_module_list</span></code>,
+<code class="docutils literal notranslate"><span class="pre">modules</span></code>,
+<code class="docutils literal notranslate"><span class="pre">modules_info</span></code>,
+<code class="docutils literal notranslate"><span class="pre">fields</span></code>,
+<code class="docutils literal notranslate"><span class="pre">filters</span></code>,
+<code class="docutils literal notranslate"><span class="pre">views</span></code>,
+<code class="docutils literal notranslate"><span class="pre">layouts</span></code>,
+<code class="docutils literal notranslate"><span class="pre">datas</span></code></p>
+</div>
+</dd></dl>
+
+<p>Like <a class="reference internal" href="#zucker.client.base.BaseClient.close" title="zucker.client.base.BaseClient.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a>, this method may block or be awaitable, depending on the
+client. The other following methods and properties (concerning server
+metadata) only parse the information fetched here and are therefore
+synchronous. In general, cached metadata entries can be retrieved like this:</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.get_metadata_item">
+<span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">get_metadata_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">JsonMapping</span></span></span><a class="headerlink" href="#zucker.client.base.BaseClient.get_metadata_item" title="Permalink to this definition"></a></dt>
+<dd><p>Return the cached value of a given metadata item.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>type_name</strong> – Name of the metadata’s type, as defined by Sugar.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>UnfetchedMetadataError</strong> – This error will be raised when the corresponding
+metadata has not been fetched yet. In that case, call <a class="reference internal" href="#zucker.client.base.BaseClient.fetch_metadata" title="zucker.client.base.BaseClient.fetch_metadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fetch_metadata()</span></code></a>
+to populate the cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Parts of the metadata API are also exposed via their own properties:</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.module_names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">module_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#zucker.client.base.BaseClient.module_names" title="Permalink to this definition"></a></dt>
+<dd><p>List of all modules that are available.</p>
+<p>This requires fetching the <code class="docutils literal notranslate"><span class="pre">full_module_list</span></code> metadata item.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.server_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">server_info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#zucker.client.base.BaseClient.server_info" title="Permalink to this definition"></a></dt>
+<dd><p>Sever information tuple.</p>
+<p>This requires fetching the <code class="docutils literal notranslate"><span class="pre">server_info</span></code> metadata item.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A 3-tuple that follows the syntax (<code class="docutils literal notranslate"><span class="pre">flavor</span></code>, <code class="docutils literal notranslate"><span class="pre">version</span></code>, <code class="docutils literal notranslate"><span class="pre">build</span></code>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="supported-modules">
+<h3>Supported modules<a class="headerlink" href="#supported-modules" title="Permalink to this heading"></a></h3>
+<p>Clients expose the list of all supported modules under the
+<a class="reference internal" href="#zucker.client.base.BaseClient.module_names" title="zucker.client.base.BaseClient.module_names"><code class="xref py py-attr docutils literal notranslate"><span class="pre">module_names</span></code></a> property:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crm</span><span class="o">.</span><span class="n">fetch_metadata</span><span class="p">(</span><span class="s2">&quot;full_module_list&quot;</span><span class="p">)</span>  <span class="c1"># Otherwise an UnfetchedMetadataError is raised</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">crm</span><span class="o">.</span><span class="n">module_names</span><span class="p">)</span>
+<span class="go">[&quot;Leads&quot;, &quot;Contacts&quot;, ...]</span>
+</pre></div>
+</div>
+<p>To check if a given module is supported, use the <code class="docutils literal notranslate"><span class="pre">in</span></code> operator:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;Contacts&quot;</span> <span class="ow">in</span> <span class="n">crm</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;NonexistentModule&quot;</span> <span class="ow">in</span> <span class="n">crm</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>This call supports both modules names as strings as well as actual
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> classes.</p>
+</section>
+<section id="generic-requests">
+<h3>Generic requests<a class="headerlink" href="#generic-requests" title="Permalink to this heading"></a></h3>
+<p>You can also use the client instance to perform generic authenticated HTTP
+requests against the server:</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.request">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.client.base.BaseClient.request" title="Permalink to this definition"></a></dt>
+<dd><p>Handle a request to the CRM’s REST API.</p>
+<p>This will make sure that authentication is set up and the correct URL is built.
+Parameters are akin to those defined by popular HTTP libraries (although not all
+are supported).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> – HTTP verb to use.</p></li>
+<li><p><strong>endpoint</strong> – Desired endpoint name (the part after <cite>/rest/v??_?/</cite>).</p></li>
+<li><p><strong>params</strong> – Dictionary of query parameters to add to the URL.</p></li>
+<li><p><strong>data</strong> – Request form data.</p></li>
+<li><p><strong>json</strong> – Request body that will be JSON-encoded. This is mutually exclusive
+with <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Depending on the client implementation, this method will be synchronous or
+asynchronous.</p>
+</div>
+</dd></dl>
+
+<p>The first request will cause the authentication flow to run. Use this property
+if you need to check for that case:</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="zucker.client.base.BaseClient.authenticated">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">BaseClient.</span></span><span class="sig-name descname"><span class="pre">authenticated</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#zucker.client.base.BaseClient.authenticated" title="Permalink to this definition"></a></dt>
+<dd><p>Shows whether initial authentication with the server has already been
+performed.</p>
+</dd></dl>
+
+</section>
+<section id="bulking">
+<h3>Bulking<a class="headerlink" href="#bulking" title="Permalink to this heading"></a></h3>
+<p>Asynchronous client implementations support batching together arbitrary requests
+into a single HTTP call:</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.client.base.AsyncClient.bulk">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.client.base.AsyncClient.bulk" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T2</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T2</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T2</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_3</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T3</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T2</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T3</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T2</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_3</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T3</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_4</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T4</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T2</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T3</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T4</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T2</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_3</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T3</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_4</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T4</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_5</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T5</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T2</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T3</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T4</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T5</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T2</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_3</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T3</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_4</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T4</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_5</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T5</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_6</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">_T6</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">_T1</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T2</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T3</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T4</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T5</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_T6</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">AsyncClient.</span></span><span class="sig-name descname"><span class="pre">bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">actions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd><p>Run a sequence of actions that require server communication together.</p>
+<p>This will use Sugar’s <a class="reference external" href="https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.3/Integration/Web_Services/REST_API/Endpoints/bulk_POST/">Bulk API</a> to batch all actions together and send them
+as a single HTTP request. It works similarly to <code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.gather()</span></code> in that
+this method will resolve once the result for all provided awaitables is
+available and return them as a tuple. You can also use this method to gather
+together multiple awaitables where only one of them uses the server. If an
+action doesn’t resolve after the first request (for example because it needs a
+second one), a second batch will be started.</p>
+<p>Do not use this is threaded environments – the implementation is not
+thread-safe.</p>
+<p>Here is an example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">first_record</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">last_record</span> <span class="o">=</span> <span class="k">await</span> <span class="n">crm</span><span class="o">.</span><span class="n">bulk</span><span class="p">(</span>
+  <span class="n">MyModel</span><span class="o">.</span><span class="n">find</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+  <span class="n">some_record</span><span class="o">.</span><span class="n">delete</span><span class="p">(),</span>
+  <span class="n">MyModel</span><span class="o">.</span><span class="n">find</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Due to shortcomings of the Python typing system, this method will only yield
+the correct types for up to 6 arguments. Bulking more actions will work, but
+the returned type will be <code class="docutils literal notranslate"><span class="pre">Any</span></code>. In that case, you will need to use
+<code class="xref py py-func docutils literal notranslate"><span class="pre">typing.cast()</span></code> to force the correct types.</p>
+</div>
+</dd></dl>
+
+</section>
+</section>
+<section id="bundled-clients">
+<h2>Bundled clients<a class="headerlink" href="#bundled-clients" title="Permalink to this heading"></a></h2>
+<p>Zucker currently bundles two client implementations:</p>
+<section id="requestsclient-synchronous">
+<h3><code class="docutils literal notranslate"><span class="pre">RequestsClient</span></code> (synchronous)<a class="headerlink" href="#requestsclient-synchronous" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.RequestsClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.</span></span><span class="sig-name descname"><span class="pre">RequestsClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'zucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.RequestsClient" title="Permalink to this definition"></a></dt>
+<dd><p>Synchronous client implementation using <a class="reference external" href="https://docs.python-requests.org/en/latest/">requests</a>.</p>
+</dd></dl>
+
+</section>
+<section id="aioclient-asynchronous">
+<h3><code class="docutils literal notranslate"><span class="pre">AioClient</span></code> (asynchronous)<a class="headerlink" href="#aioclient-asynchronous" title="Permalink to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.AioClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.</span></span><span class="sig-name descname"><span class="pre">AioClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'zucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.AioClient" title="Permalink to this definition"></a></dt>
+<dd><p>Asynchronous client implementation using <a class="reference external" href="https://docs.aiohttp.org/en/latest/index.html">aiohttp</a>.</p>
+</dd></dl>
+
+</section>
+</section>
+<section id="implementing-your-own-client">
+<span id="implementing-clients"></span><h2>Implementing your own client<a class="headerlink" href="#implementing-your-own-client" title="Permalink to this heading"></a></h2>
+<p>If you are already using an HTTP library that isn’t supported by Zucker yet,
+you can write your own client. This isn’t much work — you basically only need
+to implement the <code class="xref py py-meth docutils literal notranslate"><span class="pre">raw_request()</span></code> method. Choose one of
+<a class="reference internal" href="#zucker.client.base.SyncClient" title="zucker.client.base.SyncClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">SyncClient</span></code></a> or
+<a class="reference internal" href="#zucker.client.base.AsyncClient" title="zucker.client.base.AsyncClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncClient</span></code></a> as the base class. As a reference, have
+a look at the provided client implementations — they also inherit from the two
+aforementioned base classes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.client.base.SyncClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.client.base.</span></span><span class="sig-name descname"><span class="pre">SyncClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'zucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.client.base.SyncClient" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.client.base.AsyncClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.client.base.</span></span><span class="sig-name descname"><span class="pre">AsyncClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_platform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'zucker'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.client.base.AsyncClient" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Zucker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="model.html" class="btn btn-neutral float-right" title="Data model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 1980, iWelt AG.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

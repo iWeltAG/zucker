@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zucker &mdash; Zucker  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Connecting and using a client" href="client.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="#" class="icon icon-home"> Zucker
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="client.html">Connecting and using a client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Data model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Module views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filtering results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Field reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Zucker</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>Zucker</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="zucker">
+<h1>Zucker<a class="headerlink" href="#zucker" title="Permalink to this heading"></a></h1>
+<p><em>Zucker</em> is a Python wrapper around Sugar’s <a class="reference external" href="https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.0/Integration/Web_Services/REST_API/">REST API</a>.
+The interface is loosely inspired by Django’s ORM syntax.
+Zucker’s main goal is to abstract away Sugar’s concepts as much as possible
+and enable a Pythonic, type-safe way to interact with the CRM system.</p>
+<p>You can see a very basic example of how it works in the following snippet.
+In a nutshell, you will need to do two things to interact with a CMR server:
+First, define a client which will talk with the server.
+Then, build a data model in Python that matches what you have on the backend –
+for every Sugar module you want to use, create a class with the corresponding properties.
+Once that is done, you can use access your records much like a list or another data structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">zucker</span> <span class="kn">import</span> <span class="n">model</span><span class="p">,</span> <span class="n">RequestsClient</span>
+
+<span class="c1"># This client will use the &#39;requests&#39; module as an HTTP transport library.</span>
+<span class="c1"># There are more to choose from here!</span>
+<span class="n">crm</span> <span class="o">=</span> <span class="n">RequestsClient</span><span class="p">(</span><span class="s2">&quot;https://crm.example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;zucker&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">)</span>
+
+<span class="c1"># The data model defined here should match the one on the server - although</span>
+<span class="c1"># you don&#39;t need to include fields that you won&#39;t use.</span>
+<span class="k">class</span> <span class="nc">Contact</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">SyncModule</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">crm</span><span class="p">,</span> <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;Contacts&quot;</span><span class="p">):</span>
+    <span class="n">lead_source</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">phone_work</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+
+<span class="c1"># .find() returns a View, which is a lazily-fetched construct that points to</span>
+<span class="c1"># some data on the server, similar to a cursor or queryset in other ORMs:</span>
+<span class="n">contacts</span> <span class="o">=</span> <span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">==</span> <span class="s2">&quot;Word of mouth&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All contacts got by word of mouth:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">contact</span> <span class="ow">in</span> <span class="n">contacts</span><span class="p">:</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">contact</span><span class="o">.</span><span class="n">phone_work</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>That’s the gist to querying records.
+Did we mention that Zucker comes without any dependencies?
+The only thing you need to install is some HTTP transport library –
+we ship support for <a class="reference external" href="https://docs.python-requests.org/en/latest/">requests</a> and <a class="reference external" href="https://docs.aiohttp.org/en/stable/">aiohttp</a>, but using other libraries is <a class="reference internal" href="client.html#implementing-clients"><span class="std std-ref">possible as well</span></a>.</p>
+<p>Zucker also includes native support for Asynchronous I/O.
+That means it seamlessly integrates into existing software stacks, regardless of your concurrency model.
+Here is the same code as above, but with an asynchronous stack:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">zucker</span> <span class="kn">import</span> <span class="n">model</span><span class="p">,</span> <span class="n">AioClient</span>
+
+<span class="c1"># Same as before, only we now use an asynchronous client. This one uses</span>
+<span class="c1"># aiohttp as the backend.</span>
+<span class="n">crm</span> <span class="o">=</span> <span class="n">AioClient</span><span class="p">(</span><span class="s2">&quot;https://crm.example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;zucker&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Contact</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">AsyncModule</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">crm</span><span class="p">,</span> <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;Contacts&quot;</span><span class="p">):</span>
+    <span class="n">lead_source</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">phone_work</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">demo</span><span class="p">():</span>
+    <span class="n">contacts</span> <span class="o">=</span> <span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">Contact</span><span class="o">.</span><span class="n">lead_source</span> <span class="o">==</span> <span class="s2">&quot;Word of mouth&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All contacts got by word of mouth:&quot;</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">for</span> <span class="n">contact</span> <span class="ow">in</span> <span class="n">contacts</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="n">contact</span><span class="o">.</span><span class="n">phone_work</span><span class="p">)</span>
+
+<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">demo</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>For a more in-depth guide into all these features,
+see the following documentation pages:</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="client.html">Connecting and using a client</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="client.html#client-api">Client API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="client.html#bundled-clients">Bundled clients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="client.html#implementing-your-own-client">Implementing your own client</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Data model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="model.html#defining-modules">Defining modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#reusing-models-with-multiple-clients">Reusing models with multiple clients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#api-reference">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#using-the-code-generation-pipeline">Using the code generation pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Module views</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="views.html#basic-view-operations">Basic view operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="views.html#full-api">Full API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filtering results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filters.html#internal-representation">Internal representation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Field reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#scalar-fields">Scalar fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#relationships">Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fields.html#implementing-fields">Implementing fields</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="client.html" class="btn btn-neutral float-right" title="Connecting and using a client" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 1980, iWelt AG.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

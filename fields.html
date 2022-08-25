@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Field reference &mdash; Zucker  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Filtering results" href="filters.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Zucker
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">Connecting and using a client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Data model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Module views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filtering results</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Field reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#scalar-fields">Scalar fields</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#strings">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#booleans">Booleans</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#numbers">Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#urls">URLs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#emails">Emails</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#enumerations">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ids">IDs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#relationships">Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-fields">Implementing fields</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Zucker</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Field reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/fields.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="field-reference">
+<span id="fields"></span><h1>Field reference<a class="headerlink" href="#field-reference" title="Permalink to this heading"></a></h1>
+<p>This page lists all the available field types to use in models.</p>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Some examples on this page return filter objects.
+These should be used when <a class="reference internal" href="filters.html#filtering"><span class="std std-ref">filtering results</span></a>,
+for example when calling <a class="reference internal" href="model.html#zucker.model.module.BoundModule.find" title="zucker.model.module.BoundModule.find"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find()</span></code></a>.</p>
+</div>
+<section id="scalar-fields">
+<h2>Scalar fields<a class="headerlink" href="#scalar-fields" title="Permalink to this heading"></a></h2>
+<p>Scalar fields are used where values from the Sugar backend can be directly mapped to some Python equivalent without any side effects.
+That means that these values can also be serialized and deserialized without using a model at all.
+Further, scalar fields mostly don’t depend on any state or other records.</p>
+<p>This field type is mainly used for primitive data types.
+All of them inherit from this common base class and share a few options for filtering:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.fields.base.</span></span><span class="sig-name descname"><span class="pre">ScalarField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.fields.base.ScalarField" title="Permalink to this definition"></a></dt>
+<dd><p>Scalar fields are fields that also support some basic filtering operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>validators</strong> – Validators can be provided to make sure that data meets
+specific requirements. These will be checked both for incoming values from
+the server and for any value that is set on the field, before writing
+changes. A validator may either be a function or a regular expression
+object. The former will be called with the value to be checked as the single
+argument and should raise a <code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code> when validation fails. The
+latter will pass the check if the entire value matches the provided regular
+expression.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A few notes to keep in mind when using validators:</p>
+<ol class="arabic simple">
+<li><p>The default strategy for validating regular expressions will coerce the incoming type to a string. That means that – for example – the number <code class="docutils literal notranslate"><span class="pre">0xff</span></code> <em>will</em> match the expression <code class="docutils literal notranslate"><span class="pre">2..</span></code>, because the string representation is <code class="docutils literal notranslate"><span class="pre">255</span></code>.</p></li>
+<li><p>Validators are always evaluated on the api data type. That means that they are run <em>after</em> serializing any user input.</p></li>
+</ol>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">NativeType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NegatableFilter</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.fields.base.ScalarField.__eq__" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for exact values of this field.</p>
+<p>Depending on type of the given value, this is is equivalent to one of the other
+filtering methods:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Ben&quot;</span> <span class="c1"># Is the same as Person.name.values(&quot;Ben&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">age</span> <span class="o">==</span> <span class="mi">3</span> <span class="c1"># Is the same as Person.age.values(3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">supervisor</span> <span class="o">==</span> <span class="kc">None</span> <span class="c1"># Is the same as Person.supervisor.null()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField.__ne__">
+<span class="sig-name descname"><span class="pre">__ne__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">NativeType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NegatableFilter</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.fields.base.ScalarField.__ne__" title="Permalink to this definition"></a></dt>
+<dd><p>Inverse of the <code class="docutils literal notranslate"><span class="pre">==</span></code> filter operator.</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">!=</span></code> operator to exclude specific values:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;Ben&quot;</span> <span class="c1"># Is the same as ~(Person.name.values(&quot;Ben&quot;))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">supervisor</span> <span class="o">!=</span> <span class="kc">None</span> <span class="c1"># Is the same as ~(Person.supervisor.null())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField.null">
+<span class="sig-name descname"><span class="pre">null</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NullishFilter</span></span></span><a class="headerlink" href="#zucker.model.fields.base.ScalarField.null" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for whether the field is null.</p>
+<p>Use the filter like this:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">employer</span><span class="o">.</span><span class="n">null</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will return objects where the ‘employer’ field is not set.</p>
+<p>To find only objects where a field is explicitly not null, invert the filter:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="o">~</span><span class="n">Person</span><span class="o">.</span><span class="n">employer</span><span class="o">.</span><span class="n">null</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>As a shorthand, you can also use the equals operator for the above examples:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">employer</span> <span class="o">==</span> <span class="kc">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">employer</span> <span class="o">!=</span> <span class="kc">None</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">NativeType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ValuesFilter</span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.fields.base.ScalarField.values" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for exact values of this field.</p>
+<p>Most basic use for this filter is finding objects by value. The filter</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s2">&quot;Ben&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will return objects who’s name is ‘Ben’.</p>
+<p>This filter takes one or more arguments. It matches entries where this set
+directly contains the field’s value, for example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s2">&quot;Paul&quot;</span><span class="p">,</span> <span class="s2">&quot;Spencer&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will match objects who’s name is either ‘Paul’ or ‘Spencer’.</p>
+<p>Inverting this filter yields a ‘not-equal’ filter, for example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="o">~</span><span class="n">Person</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s2">&quot;Mike&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This query will match all objects where the name is not equal to ‘Mike’.</p>
+<p>The above examples are also available as a shorthand through the equals
+operator (although you can only check for a single value here):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Ben&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;Ben&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<section id="strings">
+<h3>Strings<a class="headerlink" href="#strings" title="Permalink to this heading"></a></h3>
+<p>For text data, use a string field:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.StringField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">StringField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.StringField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable field that handles the various string columns.</p>
+<p>This will handle any backend field that has the database type <code class="docutils literal notranslate"><span class="pre">varchar</span></code>, <code class="docutils literal notranslate"><span class="pre">text</span></code>,
+<code class="docutils literal notranslate"><span class="pre">text</span></code>, <code class="docutils literal notranslate"><span class="pre">encrypt</span></code>, <code class="docutils literal notranslate"><span class="pre">longtext</span></code> or <code class="docutils literal notranslate"><span class="pre">textarea</span></code>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.StringField.contains">
+<span class="sig-name descname"><span class="pre">contains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">StringFilter</span></span></span><a class="headerlink" href="#zucker.model.StringField.contains" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values that contain a given string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.StringField.ends_with">
+<span class="sig-name descname"><span class="pre">ends_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">StringFilter</span></span></span><a class="headerlink" href="#zucker.model.StringField.ends_with" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values that end with a given string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.StringField.not_empty">
+<span class="sig-name descname"><span class="pre">not_empty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NotEmptyFilter</span></span></span><a class="headerlink" href="#zucker.model.StringField.not_empty" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for non-empty values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.StringField.starts_with">
+<span class="sig-name descname"><span class="pre">starts_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">StringFilter</span></span></span><a class="headerlink" href="#zucker.model.StringField.starts_with" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values that start with a given string.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="booleans">
+<h3>Booleans<a class="headerlink" href="#booleans" title="Permalink to this heading"></a></h3>
+<p>Boolean fields store either <code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code>:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.BooleanField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">BooleanField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.BooleanField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable field for boolean columns.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.BooleanField.false">
+<span class="sig-name descname"><span class="pre">false</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ValuesFilter</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.BooleanField.false" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for false values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.BooleanField.true">
+<span class="sig-name descname"><span class="pre">true</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ValuesFilter</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.BooleanField.true" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for true values.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="numbers">
+<h3>Numbers<a class="headerlink" href="#numbers" title="Permalink to this heading"></a></h3>
+<p>Depending on the type of number stored, use one of these two fields:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.IntegerField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">IntegerField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.IntegerField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable field for integer columns.</p>
+<p>Use this for backend fields of type <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">integer</span></code>, <code class="docutils literal notranslate"><span class="pre">long</span></code>, <code class="docutils literal notranslate"><span class="pre">smallint</span></code>,
+<code class="docutils literal notranslate"><span class="pre">tinyint</span></code> or <code class="docutils literal notranslate"><span class="pre">ulong</span></code>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.FloatField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">FloatField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.FloatField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable field for floating-point number columns.</p>
+<p>This is appropriate for backend fields that have the type <code class="docutils literal notranslate"><span class="pre">float</span></code> or <code class="docutils literal notranslate"><span class="pre">decimal</span></code>.</p>
+</dd></dl>
+
+<p>Both of these fields share an API for filtering:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.fields.base.NumericField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.fields.base.</span></span><span class="sig-name descname"><span class="pre">NumericField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.fields.base.NumericField" title="Permalink to this definition"></a></dt>
+<dd><p>Scalar field with filtering operators that produce a total ordering.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.NumericField.__gt__">
+<span class="sig-name descname"><span class="pre">__gt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NumericFilter</span></span></span><a class="headerlink" href="#zucker.model.fields.base.NumericField.__gt__" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values less than the specified scalar:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">60</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.NumericField.__gte__">
+<span class="sig-name descname"><span class="pre">__gte__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NumericFilter</span></span></span><a class="headerlink" href="#zucker.model.fields.base.NumericField.__gte__" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values greater than or equal to the specified scalar:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">21</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.NumericField.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NumericFilter</span></span></span><a class="headerlink" href="#zucker.model.fields.base.NumericField.__lt__" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values less than the specified scalar:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">age</span> <span class="o">&lt;</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.NumericField.__lte__">
+<span class="sig-name descname"><span class="pre">__lte__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NumericFilter</span></span></span><a class="headerlink" href="#zucker.model.fields.base.NumericField.__lte__" title="Permalink to this definition"></a></dt>
+<dd><p>Filter for values less than or equal to the specified scalar:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Person</span><span class="o">.</span><span class="n">age</span> <span class="o">&lt;=</span> <span class="mi">18</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="urls">
+<h3>URLs<a class="headerlink" href="#urls" title="Permalink to this heading"></a></h3>
+<p>URLs can be accessed with this field:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.URLField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">URLField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.URLField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable string field for URLs.</p>
+<p>This should be used for database columns of type <code class="docutils literal notranslate"><span class="pre">url</span></code>. URLs will be decoded and
+returned as an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">urllib.parse.ParseResult</span></code>, which contains the
+parsed components of the URL. To get a string, call <code class="docutils literal notranslate"><span class="pre">str()</span></code> with the result
+object.</p>
+</dd></dl>
+
+</section>
+<section id="emails">
+<h3>Emails<a class="headerlink" href="#emails" title="Permalink to this heading"></a></h3>
+<p>Sugar exposes emails with two APIs: a legacy version and a new version.
+The new version supports connecting any number of emails to a record and treats them like a link.
+This also allows setting metadata on emails, for example to opt out of communication.
+The legacy version exposes two fields <code class="docutils literal notranslate"><span class="pre">email1</span></code> and <code class="docutils literal notranslate"><span class="pre">email2</span></code> on the record which map to the first and second email provided through the first method.
+See the <a class="reference external" href="https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_11.2/Architecture/Email_Addresses/#REST_API">documentation</a> for more details.</p>
+<p>Zucker currently only supports the legacy API through this field:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.LegacyEmailField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">LegacyEmailField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.LegacyEmailField" title="Permalink to this definition"></a></dt>
+<dd><p>Field for legacy email addresses (<code class="docutils literal notranslate"><span class="pre">email1</span></code> and <code class="docutils literal notranslate"><span class="pre">email2</span></code>).</p>
+<p>This is a string field that also validates <a class="footnote-reference brackets" href="#validation" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> any input to be
+email-like. It should only be used on string columns with names <code class="docutils literal notranslate"><span class="pre">email1</span></code> and
+<code class="docutils literal notranslate"><span class="pre">email2</span></code>.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="validation" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Validation is currently pretty basic, because validating emails is hard. The
+Sugar backend will have the final call on what is treated as valid.</p>
+</aside>
+</aside>
+<p>Normally, this field is used like this (with the second instance being optional):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Lead</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">UnboundModule</span><span class="p">):</span>
+    <span class="n">email1</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">LegacyEmailField</span><span class="p">()</span>
+    <span class="n">email2</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">LegacyEmailField</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="enumerations">
+<h3>Enumerations<a class="headerlink" href="#enumerations" title="Permalink to this heading"></a></h3>
+<p>The Sugar Studio allows to define fields of a type called <em>Dropdown</em>.
+This field type allows users to select exactly one out of a predefined set of values.
+Zucker maps these fields to Python’s <code class="xref py py-mod docutils literal notranslate"><span class="pre">enum</span></code> types:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.EnumField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">EnumField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">EnumType</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.EnumField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable field that represents <em>Dropdown</em> Sugar fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>enum</strong> – Pass an <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code> type that represents the options for this
+field. This enum must have a non-null member named <code class="docutils literal notranslate"><span class="pre">DEFAULT</span></code>. Further,
+elements should be strings (unless otherwise specified on the server side).</p>
+</dd>
+</dl>
+<p>Define an enum and use the field like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">enum</span>
+
+<span class="k">class</span> <span class="nc">LeadSource</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+  <span class="n">DEFAULT</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+  <span class="n">OTHER</span> <span class="o">=</span> <span class="s2">&quot;Other&quot;</span>
+  <span class="n">EXISTING_CUSTOMER</span> <span class="o">=</span> <span class="s2">&quot;Existing Customer&quot;</span>
+  <span class="n">DIRECT_MAIL</span> <span class="o">=</span> <span class="s2">&quot;Direct Mail&quot;</span>
+  <span class="n">COLD_CALL</span> <span class="o">=</span> <span class="s2">&quot;Cold Call&quot;</span>
+  <span class="n">WORD_OF_MOUTH</span> <span class="o">=</span> <span class="s2">&quot;Word of mouth&quot;</span>
+  <span class="c1"># ...</span>
+
+<span class="k">class</span> <span class="nc">Lead</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">UnboundModule</span><span class="p">):</span>
+    <span class="n">lead_source</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">EnumField</span><span class="p">(</span><span class="n">LeadSource</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Again, note the <code class="docutils literal notranslate"><span class="pre">DEFAULT</span></code> field.</p>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In the metadata API, Sugar represents these fields with the additional
+parameter <code class="docutils literal notranslate"><span class="pre">options</span></code>. Other than that, enumerations are regular text fields.</p>
+</div>
+</section>
+<section id="ids">
+<h3>IDs<a class="headerlink" href="#ids" title="Permalink to this heading"></a></h3>
+<p>Record IDs can be accessed using fields of this type:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.IdField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">IdField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.IdField" title="Permalink to this definition"></a></dt>
+<dd><p>Immutable field for accessing record IDs.</p>
+<p>An instance of this field is automatically created for every module. Manually
+creating fields of this type should only be necessary for referencing links. In
+Python, IDs are represented by <code class="xref py py-class docutils literal notranslate"><span class="pre">UUID</span></code> objects.</p>
+</dd></dl>
+
+<p>Note that modules automatically receive a field of this type with the name <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+</section>
+</section>
+<section id="relationships">
+<h2>Relationships<a class="headerlink" href="#relationships" title="Permalink to this heading"></a></h2>
+<p>Sugar offers a <a class="reference external" href="https://support.sugarcrm.com/Knowledge_Base/Studio_and_Module_Builder/Introduction_to_Relationships_and_Relate_Fields/">number of ways</a> to model bidirectional data relationships.
+The main way is by using <em>relationship links</em>.
+Here, a link is defined between two module types and both models get a corresponding field.
+In Zucker, use this field to access a link:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.RelatedField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.</span></span><span class="sig-name descname"><span class="pre">RelatedField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">related_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">SyncModule</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">AsyncModule</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">link_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.RelatedField" title="Permalink to this definition"></a></dt>
+<dd><p>Field that returns a view on a relationship link.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>related_module</strong> – The module type on the other side of the relationship.</p></li>
+<li><p><strong>link_name</strong> – Name of the link.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The related module used to initialize this field must be a bound module with the
+same client as the module the field is attached to. You can’t mix synchronous and
+asynchronous models here.</p>
+</div>
+</dd></dl>
+
+</section>
+<section id="implementing-fields">
+<h2>Implementing fields<a class="headerlink" href="#implementing-fields" title="Permalink to this heading"></a></h2>
+<p>Next to the already mentioned <a class="reference internal" href="#zucker.model.fields.base.ScalarField" title="zucker.model.fields.base.ScalarField"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScalarField</span></code></a> and <a class="reference internal" href="#zucker.model.fields.base.NumericField" title="zucker.model.fields.base.NumericField"><code class="xref py py-class docutils literal notranslate"><span class="pre">NumericField</span></code></a>, there are also other base classes available to use when implementing custom field types.
+In fact, most of the above scalar fields above actually implement the mutable variants:</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.fields.base.MutableScalarField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.fields.base.</span></span><span class="sig-name descname"><span class="pre">MutableScalarField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.fields.base.MutableScalarField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable version of <a class="reference internal" href="#zucker.model.fields.base.ScalarField" title="zucker.model.fields.base.ScalarField"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScalarField</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.fields.base.MutableNumericField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.fields.base.</span></span><span class="sig-name descname"><span class="pre">MutableNumericField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.fields.base.MutableNumericField" title="Permalink to this definition"></a></dt>
+<dd><p>Mutable version of <a class="reference internal" href="#zucker.model.fields.base.NumericField" title="zucker.model.fields.base.NumericField"><code class="xref py py-class docutils literal notranslate"><span class="pre">NumericField</span></code></a>.</p>
+</dd></dl>
+
+<p>A field being mutable means that when a field <code class="docutils literal notranslate"><span class="pre">name</span></code> is used on a <code class="docutils literal notranslate"><span class="pre">Record</span></code> record type, both of the following will work:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">the_name</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># Get the name of a record object</span>
+<span class="n">record</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;New Name&quot;</span>  <span class="c1"># Set a new value</span>
+</pre></div>
+</div>
+<p>To implement a scalar field, choose and applicable superclass and override it.
+Scalar fields require two generic arguments - native type and an API type.
+The latter is the type of data the Sugar API returns for the field and should be a JSON type.
+Normally, this will be one of the JSON-native scalars <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>.
+The native type may be the same, but can also be something different.
+This is the rich Python type that the API response gets converted into.
+A typical example here is for dates, which are typically encoded as strings and returned as native <code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code> objects.</p>
+<p>To handle this conversion, you will need to implement these two methods on the new field class:</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField.load_value">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ScalarField.</span></span><span class="sig-name descname"><span class="pre">load_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JsonType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NativeType</span></span></span><a class="headerlink" href="#zucker.model.fields.base.ScalarField.load_value" title="Permalink to this definition"></a></dt>
+<dd><p>Load a value from the API into a native data type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_value</strong> – Response from the API for this field. This will be a JSON
+primitive, which should either be returned as-is (where appropriate) or
+converted into a native Python data type.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Python data type for this field.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.fields.base.ScalarField.serialize">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ScalarField.</span></span><span class="sig-name descname"><span class="pre">serialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">NativeType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ApiType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ApiType</span></span></span><a class="headerlink" href="#zucker.model.fields.base.ScalarField.serialize" title="Permalink to this definition"></a></dt>
+<dd><p>Serialize a native data type into something the API can take back for
+saving.</p>
+<p>This method also supports “serializing” api types. In this case implementors are
+advised to verify the input’s validity and return it as-is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – Native or API data type for this field.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An API-compatible data type.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When setting the value of a mutable field, you can provide both the native as well as the API type.
+For a hypothetical <code class="docutils literal notranslate"><span class="pre">BirdField</span></code> field on a <code class="docutils literal notranslate"><span class="pre">Zoo</span></code> model, this would both be possible:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">the_bird</span> <span class="o">=</span> <span class="n">zoo</span><span class="o">.</span><span class="n">bird</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">the_bird</span>
+<span class="go">&lt;Bird object at ...&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">zoo</span><span class="o">.</span><span class="n">bird</span> <span class="o">=</span> <span class="n">the_bird</span>  <span class="c1"># Set the field value using the native data type</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">zoo</span><span class="o">.</span><span class="n">bird</span> <span class="o">=</span> <span class="s2">&quot;zazu&quot;</span>  <span class="c1"># Set the field value using the API type (assuming birds serialize to strings)</span>
+</pre></div>
+</div>
+<p>This is why the <a class="reference internal" href="#zucker.model.fields.base.ScalarField.serialize" title="zucker.model.fields.base.ScalarField.serialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">serialize()</span></code></a> takes both input types.</p>
+</div>
+<p>Numeric fields only have one generic argument, as the native and API types are assumed to be the same.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="filters.html" class="btn btn-neutral float-left" title="Filtering results" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 1980, iWelt AG.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

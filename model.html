@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data model &mdash; Zucker  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Module views" href="views.html" />
+    <link rel="prev" title="Connecting and using a client" href="client.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Zucker
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">Connecting and using a client</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#defining-modules">Defining modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#extending-the-model">Extending the model</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reusing-models-with-multiple-clients">Reusing models with multiple clients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-code-generation-pipeline">Using the code generation pipeline</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#inspecting">Inspecting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Module views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filtering results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Field reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Zucker</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Data model</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/model.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-model">
+<h1>Data model<a class="headerlink" href="#data-model" title="Permalink to this heading"></a></h1>
+<p>Most other Sugar clients return data queried from the server – for example a
+list of records – more or less exactly as they receive it from the server.
+That means that all fields from the server will be made available, without
+further processing. While this has some benefits (like being able to quickly
+evaluate the available data over a large number of modules), Zucker takes a
+bit of a different approach.</p>
+<p>In order to interact with records from the CRM system, you must first define a
+<em>data model</em>. This is basically a one-to-one copy of the content structure
+that the server defines into special Python classes, much like other ORM
+libraries do. Once this definition has been created, these classes are used to
+interact with the server. Using this approach has a number of benefits:</p>
+<ul class="simple">
+<li><p>Records are now rich Python objects which can have their own methods for
+further data processing, instead of plain dictionaries.</p></li>
+<li><p>Filtering statements can be expressed in a
+<a class="reference internal" href="filters.html#filtering"><span class="std std-ref">more Pythonic way</span></a>.</p></li>
+<li><p>The model can be validated against the current server schema, which ensures
+that we are always working against a known state.</p></li>
+<li><p>Support for static typing using the <code class="xref py py-mod docutils literal notranslate"><span class="pre">typing</span></code> module.</p></li>
+</ul>
+<section id="defining-modules">
+<span id="id1"></span><h2>Defining modules<a class="headerlink" href="#defining-modules" title="Permalink to this heading"></a></h2>
+<p>To define a module, you need to create a subclass of Zucker’s
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModule</span></code> base class. This is done by using
+either <code class="xref py py-class docutils literal notranslate"><span class="pre">SyncModule</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncModule</span></code>
+as the superclass, depending on the client implementation. This type of module
+is also referred to as a <em>bound</em> module because it is fixed to the client it is
+initialized with. Inside your class, define fields with the same name as they
+appear in the API:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">zucker</span> <span class="kn">import</span> <span class="n">model</span>
+
+<span class="n">crm</span> <span class="o">=</span> <span class="n">SomeClient</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+<span class="c1"># Here, the &#39;Contact&#39; module is bound to the &#39;crm&#39; client:</span>
+<span class="k">class</span> <span class="nc">Contact</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">SyncModule</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">crm</span><span class="p">,</span> <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;Contacts&quot;</span><span class="p">):</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">lead_source</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">phone_mobile</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">phone_work</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">email_opt_out</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If you in an asynchronous environment, use <code class="docutils literal notranslate"><span class="pre">model.AsyncModule</span></code> instead. Note
+that it is not possible (and not supported) to mix synchronous models with
+asynchronous clients or vice-versa.</p>
+<section id="extending-the-model">
+<h3>Extending the model<a class="headerlink" href="#extending-the-model" title="Permalink to this heading"></a></h3>
+<p>Make sure to use the correct <a class="reference internal" href="fields.html#fields"><span class="std std-ref">field types</span></a>, depending on the
+server’s database schema. You don’t need to recreate the entire model here,
+either – only defining the fields you will actually use is encouraged for two
+reasons:</p>
+<ol class="arabic simple">
+<li><p>Changes to other parts of the data model won’t impact your implementation
+if you are ignoring the fields (by not defining them).</p></li>
+<li><p>Zucker will evaluate the list of fields you have defined and only fetch the
+relevant data, decreasing the total amount of bandwidth needed.</p></li>
+</ol>
+<p>You can name the class whatever you want, but make sure the name in the generic
+(square brackets) matches the name of the class. In case you are not using
+Python <code class="xref py py-mod docutils literal notranslate"><span class="pre">typing</span></code>, you can also leave out the generic entirely.</p>
+<p>If the class has a different name as the corresponding Sugar module, you need to
+provide the latter as an <cite>api_name</cite> parameter. This will mostly be the case for
+plural naming and Sugar and singular class names in Python models.</p>
+<p>Since this module is a normal Python class, you can also define your own
+methods, which will be available to use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Contact</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">actual_phone</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phone_mobile</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">phone_work</span> <span class="ow">or</span> <span class="kc">None</span>
+</pre></div>
+</div>
+<p>Now, all contact objects have a computed property <code class="docutils literal notranslate"><span class="pre">actual_phone</span></code>, which will
+refer to the first defined phone number.</p>
+</section>
+</section>
+<section id="reusing-models-with-multiple-clients">
+<h2>Reusing models with multiple clients<a class="headerlink" href="#reusing-models-with-multiple-clients" title="Permalink to this heading"></a></h2>
+<p>Having multiple clients can be beneficial if you are connecting to different CRM
+servers at the same time. It may also occur that multiple projects need to
+access the same Sugar instance. In order to minimize duplicate code, model
+base classes can be created and used as additional superclasses when defining
+a client-bound module. To aid with this pattern, Zucker provides an
+<code class="xref py py-class docutils literal notranslate"><span class="pre">UnboundModule</span></code> class. As the name already implies, these
+modules are referred to as <em>unbound</em> because they don’t belong to a specific
+client yet.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">zucker</span> <span class="kn">import</span> <span class="n">model</span><span class="p">,</span> <span class="n">RequestsClient</span><span class="p">,</span> <span class="n">AioClient</span>
+
+<span class="k">class</span> <span class="nc">BaseContact</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">UnboundModule</span><span class="p">):</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">lead_source</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">phone_mobile</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+    <span class="n">phone_work</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">StringField</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">actual_phone</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phone_mobile</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">phone_work</span> <span class="ow">or</span> <span class="kc">None</span>
+
+<span class="n">alpha_crm</span> <span class="o">=</span> <span class="n">RequestsClient</span><span class="p">(</span><span class="s2">&quot;https://alpha.example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;zucker&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">)</span>
+<span class="n">beta_crm</span> <span class="o">=</span> <span class="n">AioClient</span><span class="p">(</span><span class="s2">&quot;https://alpha.example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;zucker&quot;</span><span class="p">,</span> <span class="s2">&quot;wordpass&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">AlphaContact</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">SyncModule</span><span class="p">,</span> <span class="n">BaseContact</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">alpha_crm</span><span class="p">,</span> <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;Contacts&quot;</span><span class="p">):</span>
+  <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">BetaContact</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">AsyncModule</span><span class="p">,</span> <span class="n">BaseContact</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">beta_crm</span><span class="p">,</span> <span class="n">api_name</span><span class="o">=</span><span class="s2">&quot;Contacts&quot;</span><span class="p">):</span>
+    <span class="c1"># This field will only be present on BetaContact instances:</span>
+    <span class="n">email_opt_out</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In the example above, contacts from the <em>alpha</em> CRM will be synchronous and
+those from the other client will be asynchronous. This can be helpful when you
+share the base models in multiple codebases.</p>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading"></a></h2>
+<p>All bound modules define the following API. You don’t need to implement the
+abstract methods, as their implementation is already provided when you use the
+synchronous or asynchronous modules as a superclass.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.module.</span></span><span class="sig-name descname"><span class="pre">BoundModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JsonType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.module.BoundModule" title="Permalink to this definition"></a></dt>
+<dd><p>Bound modules are module classes are already scoped to a client and therefore
+also to the sync or async paradigm.</p>
+<p>Bound modules contain all the logic that enables server-side communication. That
+means that bound records (records are the instances of module classes) can be
+saved, refreshed and deleted.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.get_client">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ClientType</span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.get_client" title="Permalink to this definition"></a></dt>
+<dd><p>Client instance bounded to this module.</p>
+<p>This client will be used for all server-side communication. Further, any caches
+are scoped to this client.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.client">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">client</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClientType</span></em><a class="headerlink" href="#zucker.model.module.BoundModule.client" title="Permalink to this definition"></a></dt>
+<dd><p>Shorthand for <a class="reference internal" href="#zucker.model.module.BoundModule.get_client" title="zucker.model.module.BoundModule.get_client"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_client()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.__eq__" title="Permalink to this definition"></a></dt>
+<dd><p>Test if this record reference is equal to another.</p>
+<p>Records are treated equal if their module and id match. When comparing two
+records that could potentially be in different modules, always compare the
+Record objects directly and not just their id properties.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.save">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.save" title="Permalink to this definition"></a></dt>
+<dd><p>Save all updated fields back to the server.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.delete">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.delete" title="Permalink to this definition"></a></dt>
+<dd><p>Delete this record.</p>
+<p>Calling this method will delete the record on the server and remove the ID
+information from this module record instance. Subsequent calls to <a class="reference internal" href="#zucker.model.module.BoundModule.save" title="zucker.model.module.BoundModule.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a>
+will create a new record.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.refresh">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_record_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.refresh" title="Permalink to this definition"></a></dt>
+<dd><p>Refresh cached data from the server.</p>
+<p>This will clear any updated data that has been manually saved and not set yet.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.find">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">GenericFilter</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="views.html#zucker.model.view.View" title="zucker.model.view.View"><span class="pre">View</span></a><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.find" title="Permalink to this definition"></a></dt>
+<dd><p>Create a view on the module.</p>
+<p>Any parameters passed here will be used as filters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.module.BoundModule.get_by_id">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_by_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Awaitable</span><span class="p"><span class="pre">[</span></span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">BoundSelf</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#zucker.model.module.BoundModule.get_by_id" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieve a record object by the ID.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="using-the-code-generation-pipeline">
+<span id="codegen"></span><h2>Using the code generation pipeline<a class="headerlink" href="#using-the-code-generation-pipeline" title="Permalink to this heading"></a></h2>
+<p>Instead of to manually defining modules, you can also make use of Zucker’s code
+generation system that will use Sugar’s <a class="reference external" href="https://sugarclub.sugarcrm.com/dev-club/b/dev-blog/posts/3-tips-for-using-the-sugar-metadata-api">metadata API</a> to find out which fields
+are supported in the ORM.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please remember that the code generated by these features should be treated as
+a guideline and may not be suitable for all cases (many fields aren’t
+supported yet). Also note that this system is still under development.</p>
+</div>
+<section id="inspecting">
+<h3>Inspecting<a class="headerlink" href="#inspecting" title="Permalink to this heading"></a></h3>
+<p>Before actually generating Python code, use the <code class="docutils literal notranslate"><span class="pre">inspect</span></code> command to narrow
+down search results and find those you actually need. It works like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python -m zucker.codegen -b <span class="s2">&quot;https://crm.example.com&quot;</span> -u <span class="s2">&quot;admin&quot;</span> -P inspect
+</pre></div>
+</div>
+<p>This will output a list of all modules Zucker can find, with their corresponding
+fields. See <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">zucker.codegen</span> <span class="pre">-h</span></code> for more options.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="client.html" class="btn btn-neutral float-left" title="Connecting and using a client" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="views.html" class="btn btn-neutral float-right" title="Module views" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 1980, iWelt AG.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

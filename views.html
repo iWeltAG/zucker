@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module views &mdash; Zucker  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Filtering results" href="filters.html" />
+    <link rel="prev" title="Data model" href="model.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Zucker
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">Connecting and using a client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Data model</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Module views</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-view-operations">Basic view operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#iteration">Iteration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#slicing">Slicing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#full-api">Full API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filtering results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html">Field reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Zucker</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Module views</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/views.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-views">
+<h1>Module views<a class="headerlink" href="#module-views" title="Permalink to this heading"></a></h1>
+<p>Once a data model has been <a class="reference internal" href="model.html#defining-modules"><span class="std std-ref">defined</span></a>, you can begin to
+retrieve individual module instance from the server, which are called <em>records</em>.
+The main way to do this is using the <code class="xref py py-meth docutils literal notranslate"><span class="pre">find()</span></code> method
+directly on the module class:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">()</span>
+<span class="go">&lt;view on Contact&gt;</span>
+</pre></div>
+</div>
+<p>What you get here is a <a class="reference internal" href="#zucker.model.view.View" title="zucker.model.view.View"><code class="xref py py-class docutils literal notranslate"><span class="pre">View</span></code></a>. Views point to a subset
+of records in a module. They contain filtering information and may also be
+refined using ranges (see below). An important thing to note here is that views
+are lazy, which means that no data will be fetched until it is explicitly
+requested. For example, a view doesn’t know it’s own length until <code class="docutils literal notranslate"><span class="pre">len()</span></code> is
+called. Views can therefore be copied, modified and refined without actually
+hitting the server.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you’re familiar with Django, you will find that a View is much like a
+<a class="reference external" href="https://docs.djangoproject.com/en/3.2/ref/models/querysets/">QuerySet</a>, although the filtering syntax is a bit different.</p>
+</div>
+<section id="basic-view-operations">
+<h2>Basic view operations<a class="headerlink" href="#basic-view-operations" title="Permalink to this heading"></a></h2>
+<p>To get items out of a view, use the same syntax as with regular lists:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">view</span> <span class="o">=</span> <span class="n">Contact</span><span class="o">.</span><span class="n">find</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+<span class="go">&lt;Contact object at ...&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">6</span><span class="p">])</span>
+<span class="go">[&lt;Contact object at ...&gt;, &lt;Contact object at ...&gt;, &lt;Contact object at ...&gt;, &lt;Contact object at ...&gt;]</span>
+</pre></div>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>When using the asynchronous API, you will need to <code class="docutils literal notranslate"><span class="pre">await</span></code> all methods that
+(potentially) return record objects, including the array syntax. The example
+above would be:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">await</span> <span class="n">view</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For the sake of brevity, the documentation will use the synchronous syntax.</p>
+</div>
+<p>These indexes adhere to whatever order the view is currently in. If you know
+the ID of a record, you can also retrieve it directly:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[</span><span class="s2">&quot;17b245ae-b5d9-4b50-8bfb-32d8ce64c1f8&quot;</span><span class="p">]</span>
+<span class="go">&lt;Contact object at ...&gt;</span>
+</pre></div>
+</div>
+<p>Any objects you take out of a view this way will be of the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> subtype that initially created the view. In this
+case, you will receive <code class="docutils literal notranslate"><span class="pre">Contact</span></code> objects.</p>
+<p>Alternative to the array syntax, you can also use the
+<a class="reference internal" href="#zucker.model.view.View.get_by_index" title="zucker.model.view.View.get_by_index"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_by_index()</span></code></a> or
+<a class="reference internal" href="#zucker.model.view.View.get_by_id" title="zucker.model.view.View.get_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_by_id()</span></code></a> methods.
+Both raise errors (<code class="xref py py-exc docutils literal notranslate"><span class="pre">IndexError</span></code> or <code class="xref py py-exc docutils literal notranslate"><span class="pre">KeyError</span></code>) when no matching record is found.</p>
+<p>To get the size of a view, use <code class="xref py py-func docutils literal notranslate"><span class="pre">len()</span></code> or <code class="xref py py-meth docutils literal notranslate"><span class="pre">length()</span></code>, depending on the paradigm:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">view</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">await</span> <span class="n">async_view</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="iteration">
+<h3>Iteration<a class="headerlink" href="#iteration" title="Permalink to this heading"></a></h3>
+<p>When iterating over a view, it will yield all records one by one:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">view</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="c1"># Do something</span>
+</pre></div>
+</div>
+<p>Views also support the <code class="xref py py-func docutils literal notranslate"><span class="pre">reversed()</span></code> protocol for iterating backwards:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">view</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="c1"># Do something</span>
+</pre></div>
+</div>
+</section>
+<section id="slicing">
+<h3>Slicing<a class="headerlink" href="#slicing" title="Permalink to this heading"></a></h3>
+<p>While large views will only fetch necessary data when, it is also possible to
+limit a view to a specific subset using the normal slice syntax. Here are some
+typical examples:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span> <span class="c1"># Start with the fourth item</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="c1"># Limit to items 2, 3, 4 and 5 (if present)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span> <span class="c1"># Return at most 20 entries</span>
+</pre></div>
+</div>
+<p>The step parameter is also supported, which makes a fully valid way to swap the
+view’s ordering. This is how <a class="reference internal" href="#zucker.model.view.View.reversed" title="zucker.model.view.View.reversed"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reversed()</span></code></a> is
+implemented:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># Reverse the entire view order</span>
+</pre></div>
+</div>
+<p>Another use for the step option is to skip every n-th item (although this may
+not be as efficient resource-wise because these requests are not batched):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="c1"># Only return evenly-indexed items</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">view</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="c1"># Skip until index 2, and from then take only every third item</span>
+</pre></div>
+</div>
+<p>When slicing like this, a new view is created. Since views are immutable, each
+change will produce a new copy. This also means that slicing can be chained
+with other calls:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_view</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">reversed</span><span class="p">()[</span><span class="mi">2</span><span class="p">:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">view</span><span class="p">[:</span><span class="mi">4</span><span class="p">]:</span>
+<span class="gp">... </span>    <span class="c1"># Do something</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="full-api">
+<h2>Full API<a class="headerlink" href="#full-api" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="zucker.model.view.View">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zucker.model.view.</span></span><span class="sig-name descname"><span class="pre">View</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">ModuleType</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#zucker.model.view.View" title="Permalink to this definition"></a></dt>
+<dd><p>Generic view class.</p>
+<p>The first generic argument should be passed when initializing a view and point to
+the module’s type. The other two are only used internally and set by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SyncView</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">AsyncView</span></code>. They determine the type of results that
+are returned from the abstract methods.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.view.View.filtered">
+<span class="sig-name descname"><span class="pre">filtered</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">JsonMapping</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">GenericFilter</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#zucker.model.view.View.filtered" title="Permalink to this definition"></a></dt>
+<dd><p>Return a clone of this view which contains additional filters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filters</strong> – Additional filters for the new view. These should be provided as
+filter-type objects (for example those generated by fields). Alternatively,
+naive dictionaries (those <a class="reference external" href="https://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_9.0/Integration/Web_Services/REST_API/Endpoints/module_GET/#Filter_Expressions">available</a> from Sugar) are also supported. When
+multiple filters are provided, they will be AND-ed together.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.view.View.reversed">
+<span class="sig-name descname"><span class="pre">reversed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#zucker.model.view.View.reversed" title="Permalink to this definition"></a></dt>
+<dd><p>Return a clone of this view, but with reversed iteration order.</p>
+<p>This is identical to <code class="docutils literal notranslate"><span class="pre">view[::-1]</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.view.View.get_by_id">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_by_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">GetReturn</span></span></span><a class="headerlink" href="#zucker.model.view.View.get_by_id" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieve a record object by it’s ID.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zucker.model.view.View.get_by_index">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_by_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">GetReturn</span></span></span><a class="headerlink" href="#zucker.model.view.View.get_by_index" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieve a record object by it’s index in this view.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="model.html" class="btn btn-neutral float-left" title="Data model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="filters.html" class="btn btn-neutral float-right" title="Filtering results" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 1980, iWelt AG.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
