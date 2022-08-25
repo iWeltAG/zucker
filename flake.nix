@@ -89,13 +89,14 @@
            inherit (packages.zucker) version src;
            dontBuild = true;
            doCheck = true;
-
-            installPhase = ''
-              echo "This derivation just runs tests." > $out
-            '';
+           installPhase = ''
+             echo "This derivation just runs tests." > $out
+           '';
          } // definition);
       in {
         inherit (packages) zucker;
+        zucker-python38 = pkgs.python38Packages.callPackage ./nix/zucker.nix { };
+        zucker-python39 = pkgs.python39Packages.callPackage ./nix/zucker.nix { };
 
         # This derivation runs the black and isort checks.
         style = mkCheckDerivation {
