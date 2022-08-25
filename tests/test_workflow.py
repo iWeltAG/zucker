@@ -1,6 +1,7 @@
+import asyncio
 import os
 from datetime import timedelta
-from typing import AsyncGenerator, Generator, cast
+from typing import Generator, cast
 
 import pytest
 from hypothesis import Phase, given, settings
@@ -35,7 +36,9 @@ def live_sync_client() -> Generator[SyncClient, None, None]:
 
 # Function scope is required here because of the event loop.
 @pytest.fixture(scope="function")
-async def live_async_client() -> AsyncGenerator[AsyncClient, None]:
+def live_async_client(
+    event_loop: asyncio.BaseEventLoop,
+) -> Generator[AsyncClient, None, None]:
     credentials = get_credentials()
     client = AioClient(
         base_url=credentials[0],
@@ -45,7 +48,7 @@ async def live_async_client() -> AsyncGenerator[AsyncClient, None]:
         verify_ssl=False,
     )
     yield client
-    await client.close()
+    event_loop.run_until_complete(client.close())
 
 
 @st.composite
